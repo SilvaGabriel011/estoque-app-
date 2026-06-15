@@ -1,0 +1,52 @@
+// Prisma schema for the Stock Management app
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  name      String
+  contact   String?
+  phone     String?
+  email     String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id           Int           @id @default(autoincrement())
+  name         String
+  sku          String?
+  category     String        @default("General")
+  unit         String        @default("each")
+  // Prices are stored EX-GST in AUD. GST (10%) is applied at sale/purchase time.
+  costPrice    Float         @default(0)
+  salePrice    Float         @default(0)
+  quantity     Int           @default(0)
+  reorderLevel Int           @default(10)
+  supplierId   Int?
+  supplier     Supplier?     @relation(fields: [supplierId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+}
+
+// A purchase (stock in) or sale (stock out) of a product.
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  type      String   // "PURCHASE" | "SALE"
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float    // ex-GST unit price at time of transaction (AUD)
+  gst       Float    // total GST amount for the line
+  total     Float    // GST-inclusive total (AUD)
+  note      String?
+  createdAt DateTime @default(now())
+}
