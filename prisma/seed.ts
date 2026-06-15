@@ -7,6 +7,14 @@ const GST = 0.1;
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 async function main() {
+  // Idempotent: only seed an empty database. This makes it safe to run on every
+  // deploy without wiping data the user has entered. Use FORCE_SEED=1 to reset.
+  const existing = await prisma.product.count();
+  if (existing > 0 && process.env.FORCE_SEED !== "1") {
+    console.log(`Database already has ${existing} products — skipping seed.`);
+    return;
+  }
+
   // Clean slate (order matters because of FKs)
   await prisma.transaction.deleteMany();
   await prisma.product.deleteMany();
