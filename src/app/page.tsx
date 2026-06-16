@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Sales (inc. GST)"
           value={formatAUD(fin.salesInc)}
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-3">
         {/* Low stock alerts */}
         <Card className="lg:col-span-1">
           <div className="mb-4 flex items-center justify-between">
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Recent activity */}
-      <Card className="mt-6">
+      <Card className="mt-4 sm:mt-6">
         <h2 className="mb-2 font-semibold text-slate-900">Recent activity</h2>
         <TransactionTable rows={recent} showType emptyLabel="No transactions yet." />
       </Card>

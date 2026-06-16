@@ -11,12 +11,14 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-6 sm:gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
           {title}
         </h1>
-        {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-1 hidden text-sm text-slate-500 sm:block">{subtitle}</p>
+        )}
       </div>
       {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
     </div>
@@ -32,7 +34,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}
+      className={`rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5 ${className}`}
     >
       {children}
     </div>
@@ -72,17 +74,17 @@ export function StatCard({
         : "text-slate-900";
   return (
     <Card className="transition-shadow hover:shadow-md">
-      <div className="flex items-start justify-between">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
         {icon && (
           <span
-            className={`flex h-9 w-9 items-center justify-center rounded-xl ${a.ring}`}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 sm:rounded-xl ${a.ring}`}
           >
             {icon}
           </span>
         )}
       </div>
-      <p className={`mt-3 text-2xl font-bold tracking-tight ${valueClass}`}>
+      <p className={`mt-2 text-xl font-bold tracking-tight sm:mt-3 sm:text-2xl ${valueClass}`}>
         {value}
       </p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
