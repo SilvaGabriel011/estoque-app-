@@ -40,7 +40,7 @@ export function Card({
 }
 
 const accentMap = {
-  emerald: { ring: "bg-emerald-100 text-emerald-700", text: "text-emerald-600" },
+  emerald: { ring: "bg-brand-100 text-brand-700", text: "text-brand-600" },
   sky: { ring: "bg-sky-100 text-sky-700", text: "text-sky-600" },
   amber: { ring: "bg-amber-100 text-amber-700", text: "text-amber-600" },
   rose: { ring: "bg-rose-100 text-rose-700", text: "text-rose-600" },
@@ -66,7 +66,7 @@ export function StatCard({
   const a = accentMap[accent];
   const valueClass =
     valueTone === "good"
-      ? "text-emerald-600"
+      ? "text-brand-600"
       : valueTone === "bad"
         ? "text-rose-600"
         : "text-slate-900";
@@ -99,7 +99,7 @@ export function Badge({
 }) {
   const tones: Record<string, string> = {
     slate: "bg-slate-100 text-slate-600 ring-slate-200",
-    green: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    green: "bg-brand-50 text-brand-700 ring-brand-200",
     red: "bg-rose-50 text-rose-700 ring-rose-200",
     amber: "bg-amber-50 text-amber-700 ring-amber-200",
     blue: "bg-sky-50 text-sky-700 ring-sky-200",
@@ -119,9 +119,9 @@ type ButtonSize = "sm" | "md";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus-visible:ring-emerald-500",
+    "bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-500",
   success:
-    "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus-visible:ring-emerald-500",
+    "bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-500",
   secondary:
     "bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400",
   ghost: "text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300",

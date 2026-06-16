@@ -1,4 +1,4 @@
-# StockPro — Consumables Inventory & Sales
+# Tekton Stock Control — Consumables Inventory & Sales
 
 A web app for managing consumables stock, built from the **CONSUMABLES STOCK**
 spreadsheet (silicones, glues, cleaning supplies, tools and protection film for

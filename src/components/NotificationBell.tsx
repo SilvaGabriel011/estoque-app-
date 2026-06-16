@@ -128,7 +128,7 @@ export default function NotificationBell() {
             <Link
               href="/purchases"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center gap-1.5 border-t border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-slate-100"
+              className="flex items-center justify-center gap-1.5 border-t border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-brand-700 hover:bg-slate-100"
             >
               Reorder now
               <ArrowRightIcon width={15} height={15} />

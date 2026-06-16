@@ -65,7 +65,7 @@ export default function ReportsClient() {
               onClick={() => setDays(p.days)}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 p.days === days
-                  ? "bg-emerald-600 text-white"
+                  ? "bg-brand-600 text-white"
                   : "text-slate-600 hover:bg-slate-100"
               }`}
             >
@@ -181,7 +181,7 @@ export default function ReportsClient() {
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+                        className="h-full rounded-full bg-gradient-to-r from-brand-300 to-brand-400"
                         style={{ width: `${(b.units / maxUnits) * 100}%` }}
                       />
                     </div>

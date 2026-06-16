@@ -87,8 +87,8 @@ export default function MovementForm({
   const overSell = kind === "SALE" && selected ? quantity > selected.quantity : false;
   const isPurchase = kind === "PURCHASE";
   const accentBtn = isPurchase
-    ? "bg-sky-600 hover:bg-sky-700 focus-visible:ring-sky-500"
-    : "bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500";
+    ? "bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-500"
+    : "bg-brand-400 text-brand-900 hover:bg-brand-500 focus-visible:ring-brand-500";
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -125,7 +125,7 @@ export default function MovementForm({
   }
 
   const inputClass =
-    "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
+    "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -164,7 +164,7 @@ export default function MovementForm({
                 onClick={() => setProductId(p.id)}
                 className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                   active
-                    ? "bg-white shadow-sm ring-2 ring-emerald-500"
+                    ? "bg-white shadow-sm ring-2 ring-brand-500"
                     : "hover:bg-white"
                 }`}
               >
@@ -190,7 +190,7 @@ export default function MovementForm({
                     {p.quantity} {p.unit}
                   </span>
                   {active && (
-                    <CheckIcon width={16} height={16} className="text-emerald-600" />
+                    <CheckIcon width={16} height={16} className="text-brand-600" />
                   )}
                 </span>
               </button>
@@ -242,7 +242,7 @@ export default function MovementForm({
               onChange={(e) =>
                 setQuantity(Math.max(1, parseInt(e.target.value) || 1))
               }
-              className="h-11 w-full border-y border-slate-300 px-3 text-center text-sm focus:z-10 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="h-11 w-full border-y border-slate-300 px-3 text-center text-sm focus:z-10 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
               type="button"
@@ -260,7 +260,7 @@ export default function MovementForm({
               <button
                 type="button"
                 onClick={() => setUnitPrice("")}
-                className="text-xs font-normal text-emerald-600 hover:underline"
+                className="text-xs font-normal text-brand-600 hover:underline"
               >
                 Reset to default
               </button>
@@ -332,7 +332,7 @@ export default function MovementForm({
         </p>
       )}
       {success && (
-        <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+        <p className="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-sm font-medium text-brand-700 ring-1 ring-inset ring-brand-200">
           <CheckIcon width={18} height={18} className="shrink-0" />
           {success}
         </p>
@@ -341,7 +341,7 @@ export default function MovementForm({
       <button
         type="submit"
         disabled={pending || quantity <= 0 || overSell || !selected}
-        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
       >
         {isPurchase ? (
           <CartIcon width={18} height={18} />

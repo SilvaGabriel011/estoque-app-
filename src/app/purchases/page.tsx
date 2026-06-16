@@ -1,9 +1,8 @@
 import { listProducts, listLowStock } from "@/server/services/products";
 import { listTransactionsByType } from "@/server/services/transactions";
-import { PageHeader, Card, ButtonLink } from "@/components/ui";
+import { PageHeader, ButtonLink } from "@/components/ui";
 import { DollarIcon } from "@/components/icons";
 import PurchaseWorkspace from "@/components/PurchaseWorkspace";
-import TransactionTable from "@/components/TransactionTable";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +10,7 @@ export default async function PurchasesPage() {
   const [products, lowStock, recent] = await Promise.all([
     listProducts(),
     listLowStock(),
-    listTransactionsByType("PURCHASE"),
+    listTransactionsByType("PURCHASE", 50),
   ]);
 
   return (
@@ -27,12 +26,7 @@ export default async function PurchasesPage() {
         }
       />
 
-      <PurchaseWorkspace products={products} lowStock={lowStock} />
-
-      <Card className="mt-6">
-        <h2 className="mb-4 font-semibold text-slate-900">Recent purchases</h2>
-        <TransactionTable rows={recent} emptyLabel="No purchases recorded yet." />
-      </Card>
+      <PurchaseWorkspace products={products} lowStock={lowStock} recent={recent} />
     </div>
   );
 }

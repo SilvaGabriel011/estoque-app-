@@ -89,7 +89,7 @@ export default async function DashboardPage() {
             <h2 className="font-semibold text-slate-900">Low stock alerts</h2>
             <Link
               href="/purchases"
-              className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
             >
               Reorder <ArrowRightIcon width={14} height={14} />
             </Link>
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/reports"
-              className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
             >
               Full report <ArrowRightIcon width={14} height={14} />
             </Link>
@@ -151,7 +151,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
+                      className="h-full rounded-full bg-gradient-to-r from-brand-300 to-brand-400"
                       style={{ width: `${(b.units / maxUnits) * 100}%` }}
                     />
                   </div>
