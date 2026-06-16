@@ -45,25 +45,27 @@ export default function ReportsClient() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            Reports
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Best sellers and financial balance, served from{" "}
-            <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
-              /api/reports
-            </code>
-            . All figures in AUD.
-          </p>
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+              Reports
+            </h1>
+            <p className="mt-1 hidden text-sm text-slate-500 sm:block">
+              Best sellers and financial balance, served from{" "}
+              <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
+                /api/reports
+              </code>
+              . All figures in AUD.
+            </p>
+          </div>
         </div>
-        <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1">
+        <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1">
           {PERIODS.map((p) => (
             <button
               key={p.days}
               onClick={() => setDays(p.days)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 p.days === days
                   ? "bg-brand-600 text-white"
                   : "text-slate-600 hover:bg-slate-100"
@@ -86,7 +88,7 @@ export default function ReportsClient() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
           Financial balance
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             label="Sales revenue (ex. GST)"
             value={formatAUD(fin?.salesEx ?? 0)}

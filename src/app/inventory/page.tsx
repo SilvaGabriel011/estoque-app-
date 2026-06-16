@@ -30,7 +30,7 @@ export default async function InventoryPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:mb-6 sm:grid-cols-3 sm:gap-4">
         <StatCard
           label="Total SKUs"
           value={String(stock.skus)}
