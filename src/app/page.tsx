@@ -5,6 +5,7 @@ import { getStockValue, getBestSellers } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard, Badge, ButtonLink } from "@/components/ui";
 import TransactionTable from "@/components/TransactionTable";
+import TopSellersChart from "@/components/TopSellersChart";
 import {
   CartIcon,
   DollarIcon,
@@ -22,8 +23,6 @@ export default async function DashboardPage() {
     getBestSellers(30, 5),
     listTransactions(8),
   ]);
-
-  const maxUnits = Math.max(1, ...best.map((b) => b.units));
 
   return (
     <div>
@@ -131,26 +130,14 @@ export default async function DashboardPage() {
           {best.length === 0 ? (
             <p className="text-sm text-slate-500">No sales recorded yet.</p>
           ) : (
-            <ul className="space-y-3.5">
-              {best.map((b) => (
-                <li key={b.product.id}>
-                  <div className="mb-1.5 flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700">
-                      {b.product.name}
-                    </span>
-                    <span className="text-slate-500">
-                      {b.units} {b.product.unit}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-300 to-brand-400"
-                      style={{ width: `${(b.units / maxUnits) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <TopSellersChart
+              items={best.map((b) => ({
+                id: b.product.id,
+                name: b.product.name,
+                unit: b.product.unit,
+                units: b.units,
+              }))}
+            />
           )}
         </Card>
       </div>
