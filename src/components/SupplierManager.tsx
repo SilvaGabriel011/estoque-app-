@@ -17,7 +17,7 @@ type Supplier = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
+  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
 export default function SupplierManager({
   suppliers,
@@ -74,7 +74,7 @@ export default function SupplierManager({
       </div>
 
       {adding && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5">
+        <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-5">
           <h3 className="mb-3 font-semibold text-slate-900">New supplier</h3>
           <form
             onSubmit={handleCreate}

@@ -2,60 +2,69 @@
 
 import { useState } from "react";
 import { Card } from "./ui";
-import { AlertIcon, ArrowRightIcon } from "./icons";
+import { SegmentedTabs } from "./controls";
+import { AlertIcon, ArrowRightIcon, CartIcon, BoxIcon, ChartIcon } from "./icons";
 import MovementForm, { ProductLite } from "./MovementForm";
+import TransactionTable from "./TransactionTable";
+
+type Row = React.ComponentProps<typeof TransactionTable>["rows"][number];
 
 export default function PurchaseWorkspace({
   products,
   lowStock,
+  recent,
 }: {
   products: ProductLite[];
   lowStock: ProductLite[];
+  recent: Row[];
 }) {
+  const [tab, setTab] = useState("record");
   const [requested, setRequested] = useState<number | null>(null);
-
-  // Bump a counter so re-selecting the same product still triggers the effect.
   const [tick, setTick] = useState(0);
+
   const pick = (id: number) => {
     setRequested(id);
     setTick((t) => t + 1);
+    setTab("record");
   };
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <Card className="lg:col-span-2">
-        <h2 className="mb-1 text-lg font-semibold text-slate-900">
-          Record a purchase
-        </h2>
-        <p className="mb-5 text-sm text-slate-500">
-          Search for a product, set the quantity, and stock is updated
-          instantly.
-        </p>
-        <MovementForm
-          products={products}
-          kind="PURCHASE"
-          requestedProductId={requested}
-          key={tick}
-        />
-      </Card>
+    <Card>
+      <SegmentedTabs
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { key: "record", label: "Record", icon: <CartIcon width={15} height={15} /> },
+          { key: "reorder", label: "Reorder", count: lowStock.length, icon: <AlertIcon width={15} height={15} /> },
+          { key: "history", label: "History", icon: <BoxIcon width={15} height={15} /> },
+        ]}
+      />
 
-      <div className="lg:col-span-1">
-        <Card className="bg-amber-50/40">
-          <div className="mb-3 flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
-              <AlertIcon width={18} height={18} />
-            </span>
-            <h3 className="font-semibold text-slate-900">Quick reorder</h3>
-          </div>
+      {tab === "record" && (
+        <div className="mx-auto max-w-2xl">
+          <MovementForm
+            products={products}
+            kind="PURCHASE"
+            requestedProductId={requested}
+            key={tick}
+          />
+        </div>
+      )}
+
+      {tab === "reorder" && (
+        <div className="mx-auto max-w-2xl">
           {lowStock.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              Nothing needs reordering right now. 🎉
-            </p>
+            <div className="py-10 text-center">
+              <ChartIcon width={28} height={28} className="mx-auto mb-2 text-slate-300" />
+              <p className="text-sm text-slate-500">
+                Nothing needs reordering right now. 🎉
+              </p>
+            </div>
           ) : (
             <>
               <p className="mb-3 text-sm text-slate-500">
-                Items at or below their reorder level. Click to load one into
-                the form.
+                Items at or below their reorder level. Tap one to load it into the
+                purchase form.
               </p>
               <ul className="space-y-2">
                 {lowStock.map((p) => (
@@ -63,7 +72,7 @@ export default function PurchaseWorkspace({
                     <button
                       type="button"
                       onClick={() => pick(p.id)}
-                      className="group flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-left transition-colors hover:border-amber-300 hover:bg-amber-50"
+                      className="group flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/50 px-3 py-3 text-left transition-colors hover:bg-amber-50"
                     >
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-medium text-slate-800">
@@ -85,8 +94,12 @@ export default function PurchaseWorkspace({
               </ul>
             </>
           )}
-        </Card>
-      </div>
-    </div>
+        </div>
+      )}
+
+      {tab === "history" && (
+        <TransactionTable rows={recent} emptyLabel="No purchases recorded yet." />
+      )}
+    </Card>
   );
 }

@@ -13,6 +13,28 @@ const base = {
   strokeLinejoin: "round" as const,
 };
 
+// Tekton brand mark: a hexagonal "box" enclosing a stylised T.
+export function BrandMark(p: IconProps) {
+  return (
+    <svg
+      width={28}
+      height={28}
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.4}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...p}
+    >
+      <path d="M24 4 L41.6 14 V34 L24 44 L6.4 34 V14 Z" />
+      <path d="M15.5 18 H32.5" />
+      <path d="M24 18 V35" />
+      <path d="M15.5 30 L24 35 L32.5 30" />
+    </svg>
+  );
+}
+
 export function DashboardIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>

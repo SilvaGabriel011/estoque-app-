@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1f5f9;
-  --foreground: #0f172a;
+  --background: #f4f1ea;
+  --foreground: #14233a;
+}
+
+/* Tekton brand palette — gold (light shades) + navy (dark shades). */
+@theme {
+  --color-brand-50: #f8f3e8;
+  --color-brand-100: #eedfc4;
+  --color-brand-200: #e2cd9d;
+  --color-brand-300: #d4b876;
+  --color-brand-400: #c9a24b; /* primary gold */
+  --color-brand-500: #b88f37;
+  --color-brand-600: #16243c; /* primary navy */
+  --color-brand-700: #1f3354;
+  --color-brand-800: #101d31;
+  --color-brand-900: #0b1521;
 }
 
 @theme inline {
@@ -19,7 +33,7 @@ body {
 
 body {
   background:
-    radial-gradient(60rem 60rem at 110% -10%, rgba(16, 185, 129, 0.06), transparent 60%),
+    radial-gradient(55rem 55rem at 110% -10%, rgba(201, 162, 75, 0.12), transparent 60%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);

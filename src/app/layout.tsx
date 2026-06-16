@@ -4,7 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import NotificationBell from "@/components/NotificationBell";
 
 export const metadata: Metadata = {
-  title: "StockPro — Inventory & Sales",
+  title: "Tekton Stock Control",
   description:
     "Inventory, purchasing, sales and financials for consumables. AUD pricing with 10% GST.",
 };
