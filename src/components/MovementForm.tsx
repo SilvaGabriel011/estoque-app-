@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatAUD, GST_RATE } from "@/lib/money";
+import { api } from "@/lib/api";
 import { Badge } from "./ui";
 import {
   SearchIcon,
@@ -27,15 +29,14 @@ export type ProductLite = {
 
 export default function MovementForm({
   products,
-  action,
   kind,
   requestedProductId,
 }: {
   products: ProductLite[];
-  action: (formData: FormData) => Promise<void>;
   kind: "PURCHASE" | "SALE";
   requestedProductId?: number | null;
 }) {
+  const router = useRouter();
   const [productId, setProductId] = useState<number>(products[0]?.id ?? 0);
   const [search, setSearch] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -89,7 +90,8 @@ export default function MovementForm({
     ? "bg-sky-600 hover:bg-sky-700 focus-visible:ring-sky-500"
     : "bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500";
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError("");
     setSuccess("");
     if (!selected) {
@@ -98,7 +100,13 @@ export default function MovementForm({
     }
     setPending(true);
     try {
-      await action(formData);
+      await api.recordMovement({
+        type: kind,
+        productId: selected.id,
+        quantity,
+        unitPrice: unitPrice.trim() === "" ? null : parseFloat(unitPrice),
+        note: note.trim() || null,
+      });
       const newStock = isPurchase
         ? selected.quantity + quantity
         : selected.quantity - quantity;
@@ -108,6 +116,7 @@ export default function MovementForm({
       setQuantity(1);
       setUnitPrice("");
       setNote("");
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -119,8 +128,7 @@ export default function MovementForm({
     "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
 
   return (
-    <form action={handleSubmit} className="space-y-5">
-      <input type="hidden" name="productId" value={productId} />
+    <form onSubmit={handleSubmit} className="space-y-5">
 
       {/* Product picker */}
       <div>

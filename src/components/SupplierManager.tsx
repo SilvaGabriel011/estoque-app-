@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, Badge, Button } from "@/components/ui";
 import { PlusIcon, TrashIcon } from "@/components/icons";
-import { createSupplier, deleteSupplier } from "@/lib/actions";
+import { api } from "@/lib/api";
 
 type Supplier = {
   id: number;
@@ -23,7 +24,38 @@ export default function SupplierManager({
 }: {
   suppliers: Supplier[];
 }) {
+  const router = useRouter();
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    const fd = new FormData(e.currentTarget);
+    try {
+      await api.createSupplier({
+        name: String(fd.get("name") ?? "").trim(),
+        contact: String(fd.get("contact") ?? "").trim() || null,
+        phone: String(fd.get("phone") ?? "").trim() || null,
+        email: String(fd.get("email") ?? "").trim() || null,
+        notes: String(fd.get("notes") ?? "").trim() || null,
+      });
+      setAdding(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add supplier.");
+    }
+  }
+
+  async function handleDelete(id: number, name: string) {
+    if (!confirm(`Delete supplier "${name}"?`)) return;
+    try {
+      await api.deleteSupplier(id);
+      router.refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not delete supplier.");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -45,10 +77,7 @@ export default function SupplierManager({
         <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5">
           <h3 className="mb-3 font-semibold text-slate-900">New supplier</h3>
           <form
-            action={async (fd) => {
-              await createSupplier(fd);
-              setAdding(false);
-            }}
+            onSubmit={handleCreate}
             className="grid grid-cols-1 gap-3 sm:grid-cols-2"
           >
             <div className="sm:col-span-2">
@@ -81,13 +110,13 @@ export default function SupplierManager({
               </label>
               <input name="notes" className={inputClass} />
             </div>
+            {error && (
+              <p className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200 sm:col-span-2">
+                {error}
+              </p>
+            )}
             <div className="sm:col-span-2">
-              <button
-                type="submit"
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-              >
-                Save supplier
-              </button>
+              <Button type="submit">Save supplier</Button>
             </div>
           </form>
         </div>
@@ -123,23 +152,15 @@ export default function SupplierManager({
               )}
               {s.notes && <p className="text-slate-500">{s.notes}</p>}
             </div>
-            <form
-              action={deleteSupplier}
-              onSubmit={(e) => {
-                if (!confirm(`Delete supplier "${s.name}"?`))
-                  e.preventDefault();
-              }}
-              className="mt-4 flex justify-end border-t border-slate-100 pt-3"
-            >
-              <input type="hidden" name="id" value={s.id} />
+            <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
               <button
-                type="submit"
+                onClick={() => handleDelete(s.id, s.name)}
                 className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50"
               >
                 <TrashIcon width={14} height={14} />
                 Delete
               </button>
-            </form>
+            </div>
           </Card>
         ))}
       </div>

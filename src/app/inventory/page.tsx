@@ -1,4 +1,6 @@
-import { getProducts, getSuppliers, getStockValue } from "@/lib/data";
+import { listProducts } from "@/server/services/products";
+import { listSuppliers } from "@/server/services/suppliers";
+import { getStockValue } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, StatCard, ButtonLink } from "@/components/ui";
 import { BoxIcon, DollarIcon, AlertIcon, CartIcon } from "@/components/icons";
@@ -8,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
   const [products, suppliers, stock] = await Promise.all([
-    getProducts(),
-    getSuppliers(),
+    listProducts(),
+    listSuppliers(),
     getStockValue(),
   ]);
 

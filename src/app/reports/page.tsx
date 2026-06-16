@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getFinancials, getBestSellers } from "@/lib/data";
+import { getFinancials, getBestSellers } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard } from "@/components/ui";
 import { DollarIcon, CartIcon, ChartIcon } from "@/components/icons";

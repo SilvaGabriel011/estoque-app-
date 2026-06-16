@@ -1,11 +1,11 @@
-import { getSuppliers } from "@/lib/data";
+import { listSuppliers } from "@/server/services/suppliers";
 import { PageHeader } from "@/components/ui";
 import SupplierManager from "@/components/SupplierManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuppliersPage() {
-  const suppliers = await getSuppliers();
+  const suppliers = await listSuppliers();
 
   return (
     <div>
