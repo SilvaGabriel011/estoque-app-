@@ -48,6 +48,40 @@ export type SupplierPayload = {
   notes?: string | null;
 };
 
+export type AlertItem = {
+  id: number;
+  name: string;
+  unit: string;
+  quantity: number;
+  reorderLevel: number;
+  supplier: string | null;
+  outOfStock: boolean;
+};
+
+export type AlertsResponse = { count: number; items: AlertItem[] };
+
+export type ReportsResponse = {
+  days: number;
+  financials: {
+    salesEx: number;
+    salesGst: number;
+    salesInc: number;
+    purchasesEx: number;
+    purchasesGst: number;
+    purchasesInc: number;
+    cogs: number;
+    grossProfit: number;
+    gstPayable: number;
+    saleCount: number;
+  };
+  bestSellers: {
+    product: { id: number; name: string; unit: string };
+    units: number;
+    revenue: number;
+  }[];
+  stock: { atCost: number; atRetail: number; units: number; skus: number };
+};
+
 export const api = {
   recordMovement: (payload: MovementPayload) =>
     request("/api/transactions", {
@@ -72,4 +106,9 @@ export const api = {
 
   deleteSupplier: (id: number) =>
     request(`/api/suppliers/${id}`, { method: "DELETE" }),
+
+  getAlerts: () => request<AlertsResponse>("/api/alerts"),
+
+  getReports: (days: number) =>
+    request<ReportsResponse>(`/api/reports?days=${days}&limit=12`),
 };

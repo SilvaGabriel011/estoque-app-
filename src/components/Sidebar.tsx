@@ -12,6 +12,7 @@ import {
   TruckIcon,
   PlusIcon,
 } from "./icons";
+import NotificationBell from "./NotificationBell";
 
 const nav = [
   { href: "/", label: "Dashboard", Icon: DashboardIcon },
@@ -45,12 +46,15 @@ export default function Sidebar() {
       {/* Mobile top bar */}
       <div className="fixed inset-x-0 top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
         <Logo />
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700"
-        >
-          {open ? "Close" : "Menu"}
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700"
+          >
+            {open ? "Close" : "Menu"}
+          </button>
+        </div>
       </div>
 
       <aside
