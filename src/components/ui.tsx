@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+import Link from "next/link";
+import { ComponentProps, ReactNode } from "react";
 
 export function PageHeader({
   title,
@@ -10,12 +11,14 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          {title}
+        </h1>
         {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="flex flex-wrap items-center gap-2">{action}</div>}
     </div>
   );
 }
@@ -29,36 +32,59 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}
+      className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}
     >
       {children}
     </div>
   );
 }
 
+const accentMap = {
+  emerald: { ring: "bg-emerald-100 text-emerald-700", text: "text-emerald-600" },
+  sky: { ring: "bg-sky-100 text-sky-700", text: "text-sky-600" },
+  amber: { ring: "bg-amber-100 text-amber-700", text: "text-amber-600" },
+  rose: { ring: "bg-rose-100 text-rose-700", text: "text-rose-600" },
+  slate: { ring: "bg-slate-100 text-slate-700", text: "text-slate-900" },
+  violet: { ring: "bg-violet-100 text-violet-700", text: "text-violet-600" },
+};
+
 export function StatCard({
   label,
   value,
   hint,
-  tone = "default",
+  icon,
+  accent = "slate",
+  valueTone,
 }: {
   label: string;
   value: string;
   hint?: string;
-  tone?: "default" | "good" | "bad" | "warn";
+  icon?: ReactNode;
+  accent?: keyof typeof accentMap;
+  valueTone?: "good" | "bad";
 }) {
-  const toneClass =
-    tone === "good"
+  const a = accentMap[accent];
+  const valueClass =
+    valueTone === "good"
       ? "text-emerald-600"
-      : tone === "bad"
+      : valueTone === "bad"
         ? "text-rose-600"
-        : tone === "warn"
-          ? "text-amber-600"
-          : "text-slate-900";
+        : "text-slate-900";
   return (
-    <Card>
-      <p className="text-sm font-medium text-slate-500">{label}</p>
-      <p className={`mt-2 text-2xl font-bold ${toneClass}`}>{value}</p>
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        {icon && (
+          <span
+            className={`flex h-9 w-9 items-center justify-center rounded-xl ${a.ring}`}
+          >
+            {icon}
+          </span>
+        )}
+      </div>
+      <p className={`mt-3 text-2xl font-bold tracking-tight ${valueClass}`}>
+        {value}
+      </p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
     </Card>
   );
@@ -69,20 +95,84 @@ export function Badge({
   tone = "slate",
 }: {
   children: ReactNode;
-  tone?: "slate" | "green" | "red" | "amber" | "blue";
+  tone?: "slate" | "green" | "red" | "amber" | "blue" | "violet";
 }) {
   const tones: Record<string, string> = {
-    slate: "bg-slate-100 text-slate-700",
-    green: "bg-emerald-100 text-emerald-700",
-    red: "bg-rose-100 text-rose-700",
-    amber: "bg-amber-100 text-amber-700",
-    blue: "bg-sky-100 text-sky-700",
+    slate: "bg-slate-100 text-slate-600 ring-slate-200",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    red: "bg-rose-50 text-rose-700 ring-rose-200",
+    amber: "bg-amber-50 text-amber-700 ring-amber-200",
+    blue: "bg-sky-50 text-sky-700 ring-sky-200",
+    violet: "bg-violet-50 text-violet-700 ring-violet-200",
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${tones[tone]}`}
     >
       {children}
     </span>
+  );
+}
+
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "success";
+type ButtonSize = "sm" | "md";
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary:
+    "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus-visible:ring-emerald-500",
+  success:
+    "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 focus-visible:ring-emerald-500",
+  secondary:
+    "bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400",
+  ghost: "text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300",
+  danger:
+    "bg-white text-rose-600 ring-1 ring-inset ring-rose-200 hover:bg-rose-50 focus-visible:ring-rose-400",
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "px-3 py-1.5 text-xs gap-1.5",
+  md: "px-4 py-2.5 text-sm gap-2",
+};
+
+const buttonBase =
+  "inline-flex items-center justify-center rounded-xl font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50";
+
+export function Button({
+  variant = "primary",
+  size = "md",
+  className = "",
+  ...props
+}: ComponentProps<"button"> & {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+}) {
+  return (
+    <button
+      className={`${buttonBase} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function ButtonLink({
+  href,
+  variant = "primary",
+  size = "md",
+  className = "",
+  children,
+}: {
+  href: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`${buttonBase} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+    >
+      {children}
+    </Link>
   );
 }

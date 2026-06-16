@@ -1,14 +1,16 @@
-import { getProducts, getTransactionsByType } from "@/lib/data";
+import { getProducts, getLowStock, getTransactionsByType } from "@/lib/data";
 import { recordPurchase } from "@/lib/actions";
-import { formatAUD, formatDate } from "@/lib/money";
-import { PageHeader, Card } from "@/components/ui";
-import MovementForm from "@/components/MovementForm";
+import { PageHeader, Card, ButtonLink } from "@/components/ui";
+import { DollarIcon } from "@/components/icons";
+import PurchaseWorkspace from "@/components/PurchaseWorkspace";
+import TransactionTable from "@/components/TransactionTable";
 
 export const dynamic = "force-dynamic";
 
 export default async function PurchasesPage() {
-  const [products, recent] = await Promise.all([
+  const [products, lowStock, recent] = await Promise.all([
     getProducts(),
+    getLowStock(),
     getTransactionsByType("PURCHASE"),
   ]);
 
@@ -16,72 +18,25 @@ export default async function PurchasesPage() {
     <div>
       <PageHeader
         title="Purchases"
-        subtitle="Buy stock from suppliers. Recording a purchase increases stock on hand."
+        subtitle="Buy stock from suppliers — recording a purchase increases stock on hand."
+        action={
+          <ButtonLink href="/sales" variant="secondary">
+            <DollarIcon width={16} height={16} />
+            Record a sale
+          </ButtonLink>
+        }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <Card className="lg:col-span-2">
-          <h2 className="mb-4 font-semibold text-slate-900">Record a purchase</h2>
-          <MovementForm
-            products={products}
-            action={recordPurchase}
-            kind="PURCHASE"
-          />
-        </Card>
+      <PurchaseWorkspace
+        products={products}
+        lowStock={lowStock}
+        action={recordPurchase}
+      />
 
-        <Card className="lg:col-span-3">
-          <h2 className="mb-4 font-semibold text-slate-900">
-            Recent purchases
-          </h2>
-          {recent.length === 0 ? (
-            <p className="text-sm text-slate-500">No purchases yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-400">
-                    <th className="py-2 pr-4 font-medium">Date</th>
-                    <th className="py-2 pr-4 font-medium">Product</th>
-                    <th className="py-2 pr-4 text-right font-medium">Qty</th>
-                    <th className="py-2 pr-4 text-right font-medium">
-                      Unit (ex)
-                    </th>
-                    <th className="py-2 pl-4 text-right font-medium">
-                      Total (inc)
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recent.map((t) => (
-                    <tr key={t.id} className="border-b border-slate-100">
-                      <td className="py-2 pr-4 text-slate-500">
-                        {formatDate(t.createdAt)}
-                      </td>
-                      <td className="py-2 pr-4 font-medium text-slate-800">
-                        {t.product.name}
-                        {t.note && (
-                          <span className="block text-xs font-normal text-slate-400">
-                            {t.note}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-4 text-right text-slate-600">
-                        {t.quantity}
-                      </td>
-                      <td className="py-2 pr-4 text-right text-slate-600">
-                        {formatAUD(t.unitPrice)}
-                      </td>
-                      <td className="py-2 pl-4 text-right font-medium text-slate-800">
-                        {formatAUD(t.total)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+      <Card className="mt-6">
+        <h2 className="mb-4 font-semibold text-slate-900">Recent purchases</h2>
+        <TransactionTable rows={recent} emptyLabel="No purchases recorded yet." />
+      </Card>
     </div>
   );
 }
