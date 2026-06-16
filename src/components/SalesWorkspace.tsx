@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { formatAUD } from "@/lib/money";
 import { Card } from "./ui";
 import { SegmentedTabs } from "./controls";
 import { DollarIcon, ChartIcon, BoxIcon } from "./icons";
@@ -64,7 +63,7 @@ export default function SalesWorkspace({
                         {b.product.name}
                       </span>
                       <span className="text-slate-500">
-                        {b.units} {b.product.unit} · {formatAUD(b.revenue)}
+                        {b.units} {b.product.unit}
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">

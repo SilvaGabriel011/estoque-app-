@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { listLowStock } from "@/server/services/products";
 import { listTransactions } from "@/server/services/transactions";
-import {
-  getStockValue,
-  getFinancials,
-  getBestSellers,
-} from "@/server/services/reports";
+import { getStockValue, getBestSellers } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard, Badge, ButtonLink } from "@/components/ui";
 import TransactionTable from "@/components/TransactionTable";
@@ -14,17 +10,15 @@ import {
   DollarIcon,
   BoxIcon,
   AlertIcon,
-  ChartIcon,
   ArrowRightIcon,
 } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [stock, lowStock, fin, best, recent] = await Promise.all([
+  const [stock, lowStock, best, recent] = await Promise.all([
     getStockValue(),
     listLowStock(),
-    getFinancials(30),
     getBestSellers(30, 5),
     listTransactions(8),
   ]);
@@ -35,7 +29,7 @@ export default async function DashboardPage() {
     <div>
       <PageHeader
         title="Dashboard"
-        subtitle="Last 30 days · all figures in AUD (GST inclusive where noted)"
+        subtitle="Inventory at a glance · financial figures live in Reports"
         action={
           <>
             <ButtonLink href="/sales" variant="secondary">
@@ -52,26 +46,25 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
-          label="Sales (inc. GST)"
-          value={formatAUD(fin.salesInc)}
-          hint={`${fin.saleCount} sales`}
-          icon={<DollarIcon width={18} height={18} />}
-          accent="emerald"
-        />
-        <StatCard
-          label="Gross profit"
-          value={formatAUD(fin.grossProfit)}
-          hint={`COGS ${formatAUD(fin.cogs)}`}
-          icon={<ChartIcon width={18} height={18} />}
-          accent="violet"
-          valueTone={fin.grossProfit >= 0 ? "good" : "bad"}
-        />
-        <StatCard
           label="Stock value (at cost)"
           value={formatAUD(stock.atCost)}
-          hint={`${stock.units} units · ${stock.skus} SKUs`}
+          hint="Inventory on hand"
           icon={<BoxIcon width={18} height={18} />}
           accent="sky"
+        />
+        <StatCard
+          label="Units on hand"
+          value={String(stock.units)}
+          hint={`Across ${stock.skus} products`}
+          icon={<BoxIcon width={18} height={18} />}
+          accent="violet"
+        />
+        <StatCard
+          label="Products (SKUs)"
+          value={String(stock.skus)}
+          hint="In the catalogue"
+          icon={<CartIcon width={18} height={18} />}
+          accent="slate"
         />
         <StatCard
           label="Low stock items"
@@ -122,7 +115,7 @@ export default async function DashboardPage() {
           )}
         </Card>
 
-        {/* Best sellers */}
+        {/* Best sellers (units only — revenue lives in Reports) */}
         <Card className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">
@@ -146,7 +139,7 @@ export default async function DashboardPage() {
                       {b.product.name}
                     </span>
                     <span className="text-slate-500">
-                      {b.units} {b.product.unit} · {formatAUD(b.revenue)}
+                      {b.units} {b.product.unit}
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
