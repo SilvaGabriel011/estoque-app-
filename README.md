@@ -26,20 +26,21 @@ aimed at the Australian market.
 
 - [Next.js 16](https://nextjs.org/) (App Router, server actions) + React 19
 - [Tailwind CSS v4](https://tailwindcss.com/)
-- [Prisma 6](https://www.prisma.io/) ORM with a SQLite database
+- [Prisma 6](https://www.prisma.io/) ORM with a PostgreSQL database (Neon)
 - TypeScript
 
-## Getting started
+## Getting started (local)
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Create the environment file (SQLite connection string)
+# 2. Create the environment file and paste your Postgres (Neon) connection
+#    strings into DATABASE_URL and DATABASE_URL_UNPOOLED.
 cp .env.example .env
 
 # 3. Create the database schema
-npx prisma migrate dev
+npx prisma migrate deploy   # or: npx prisma migrate dev
 
 # 4. Seed it with the spreadsheet data (products, suppliers, sample history)
 npm run seed
@@ -49,6 +50,20 @@ npm run dev
 ```
 
 Open <http://localhost:3000>.
+
+## Deploying to Vercel
+
+This app is built for Vercel + [Neon Postgres](https://neon.tech/).
+
+1. Connect the repo to Vercel and set the **Production branch** to `main`.
+2. Add the **Neon** integration (Vercel → Storage → Neon). It automatically
+   sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED` on the project.
+3. Deploy. The `vercel-build` script runs `prisma generate`,
+   `prisma migrate deploy` (creates the tables) and seeds the database on the
+   first deploy, then builds the app.
+
+> The seed is idempotent — it only runs against an empty database, so your data
+> is never wiped on subsequent deploys. Set `FORCE_SEED=1` to reset.
 
 ## Useful scripts
 
@@ -68,6 +83,10 @@ Open <http://localhost:3000>.
 - **Transaction** — a `PURCHASE` or `SALE` of a product: quantity, unit price
   (ex-GST), GST amount and GST-inclusive total. Purchases increase stock; sales
   decrease it.
+
+> Note: the database is PostgreSQL (Neon) so it works on Vercel's serverless
+> runtime. SQLite (a local file) cannot be used on Vercel because the
+> filesystem is read-only and ephemeral.
 
 GST is a flat 10% (`src/lib/money.ts`); prices are entered ex-GST and GST is
 calculated at the point of each transaction.

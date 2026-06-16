@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getFinancials, getBestSellers } from "@/lib/data";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard } from "@/components/ui";
+import { DollarIcon, CartIcon, ChartIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -61,12 +62,15 @@ export default async function ReportsPage({
           label="Sales revenue (ex. GST)"
           value={formatAUD(fin.salesEx)}
           hint={`${formatAUD(fin.salesInc)} inc. GST`}
-          tone="good"
+          icon={<DollarIcon width={18} height={18} />}
+          accent="emerald"
         />
         <StatCard
           label="Cost of goods sold"
           value={formatAUD(fin.cogs)}
           hint="Based on current cost prices"
+          icon={<CartIcon width={18} height={18} />}
+          accent="sky"
         />
         <StatCard
           label="Gross profit"
@@ -76,13 +80,16 @@ export default async function ReportsPage({
               ? `${Math.round((fin.grossProfit / fin.salesEx) * 100)}% margin`
               : "—"
           }
-          tone={fin.grossProfit >= 0 ? "good" : "bad"}
+          icon={<ChartIcon width={18} height={18} />}
+          accent="violet"
+          valueTone={fin.grossProfit >= 0 ? "good" : "bad"}
         />
         <StatCard
           label="Net GST payable"
           value={formatAUD(fin.gstPayable)}
           hint="GST on sales − GST on purchases"
-          tone={fin.gstPayable >= 0 ? "default" : "good"}
+          icon={<DollarIcon width={18} height={18} />}
+          accent="amber"
         />
       </div>
 

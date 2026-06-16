@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Badge } from "@/components/ui";
+import { Card, Badge, Button } from "@/components/ui";
+import { PlusIcon, TrashIcon } from "@/components/icons";
 import { createSupplier, deleteSupplier } from "@/lib/actions";
 
 type Supplier = {
@@ -27,12 +28,17 @@ export default function SupplierManager({
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
+        <Button
+          variant={adding ? "secondary" : "primary"}
           onClick={() => setAdding((v) => !v)}
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
         >
-          {adding ? "Cancel" : "+ Add supplier"}
-        </button>
+          {adding ? "Cancel" : (
+            <>
+              <PlusIcon width={16} height={16} />
+              Add supplier
+            </>
+          )}
+        </Button>
       </div>
 
       {adding && (
@@ -89,17 +95,22 @@ export default function SupplierManager({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {suppliers.map((s) => (
-          <Card key={s.id}>
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-slate-900">{s.name}</h3>
-                {s.contact && (
-                  <p className="text-sm text-slate-600">{s.contact}</p>
-                )}
+          <Card key={s.id} className="flex flex-col transition-shadow hover:shadow-md">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-sm font-bold text-white">
+                  {s.name.slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="truncate font-semibold text-slate-900">{s.name}</h3>
+                  {s.contact && (
+                    <p className="truncate text-sm text-slate-600">{s.contact}</p>
+                  )}
+                </div>
               </div>
-              <Badge tone="blue">{s._count.products} products</Badge>
+              <Badge tone="blue">{s._count.products}</Badge>
             </div>
-            <div className="mt-3 space-y-1 text-sm text-slate-600">
+            <div className="mt-3 flex-1 space-y-1 text-sm text-slate-600">
               {s.phone && (
                 <p>
                   <span className="text-slate-400">Phone:</span> {s.phone}
@@ -118,13 +129,14 @@ export default function SupplierManager({
                 if (!confirm(`Delete supplier "${s.name}"?`))
                   e.preventDefault();
               }}
-              className="mt-4"
+              className="mt-4 flex justify-end border-t border-slate-100 pt-3"
             >
               <input type="hidden" name="id" value={s.id} />
               <button
                 type="submit"
-                className="rounded-md border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50"
               >
+                <TrashIcon width={14} height={14} />
                 Delete
               </button>
             </form>

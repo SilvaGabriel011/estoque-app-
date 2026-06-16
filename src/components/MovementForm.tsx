@@ -1,33 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatAUD, GST_RATE } from "@/lib/money";
+import { Badge } from "./ui";
+import {
+  SearchIcon,
+  PlusIcon,
+  MinusIcon,
+  CheckIcon,
+  CartIcon,
+  DollarIcon,
+} from "./icons";
 
-type ProductLite = {
+export type ProductLite = {
   id: number;
   name: string;
+  sku: string | null;
+  category: string;
   unit: string;
   quantity: number;
+  reorderLevel: number;
   costPrice: number;
   salePrice: number;
+  supplier?: { name: string } | null;
 };
 
 export default function MovementForm({
   products,
   action,
   kind,
+  requestedProductId,
 }: {
   products: ProductLite[];
   action: (formData: FormData) => Promise<void>;
   kind: "PURCHASE" | "SALE";
+  requestedProductId?: number | null;
 }) {
   const [productId, setProductId] = useState<number>(products[0]?.id ?? 0);
-  const [quantity, setQuantity] = useState<string>("1");
+  const [search, setSearch] = useState("");
+  const [quantity, setQuantity] = useState<number>(1);
   const [unitPrice, setUnitPrice] = useState<string>("");
-  const [error, setError] = useState<string>("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [success, setSuccess] = useState<string>("");
+  const summaryRef = useRef<HTMLDivElement>(null);
 
-  const selected = products.find((p) => p.id === productId);
+  // Allow an external trigger (e.g. low-stock chips) to pick a product.
+  useEffect(() => {
+    if (requestedProductId && requestedProductId !== productId) {
+      setProductId(requestedProductId);
+      setSearch("");
+      summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedProductId]);
+
+  const selected = products.find((p) => p.id === productId) ?? null;
   const defaultPrice = selected
     ? kind === "PURCHASE"
       ? selected.costPrice
@@ -36,24 +65,49 @@ export default function MovementForm({
 
   const effectivePrice =
     unitPrice.trim() === "" ? defaultPrice : parseFloat(unitPrice) || 0;
-  const qty = parseInt(quantity) || 0;
 
   const totals = useMemo(() => {
-    const ex = effectivePrice * qty;
+    const ex = effectivePrice * quantity;
     const gst = Math.round(ex * GST_RATE * 100) / 100;
     return { ex, gst, inc: ex + gst };
-  }, [effectivePrice, qty]);
+  }, [effectivePrice, quantity]);
 
-  const overSell =
-    kind === "SALE" && selected ? qty > selected.quantity : false;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.sku ?? "").toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+    );
+  }, [products, search]);
+
+  const overSell = kind === "SALE" && selected ? quantity > selected.quantity : false;
+  const isPurchase = kind === "PURCHASE";
+  const accentBtn = isPurchase
+    ? "bg-sky-600 hover:bg-sky-700 focus-visible:ring-sky-500"
+    : "bg-emerald-600 hover:bg-emerald-700 focus-visible:ring-emerald-500";
 
   async function handleSubmit(formData: FormData) {
     setError("");
+    setSuccess("");
+    if (!selected) {
+      setError("Select a product first.");
+      return;
+    }
     setPending(true);
     try {
       await action(formData);
-      setQuantity("1");
+      const newStock = isPurchase
+        ? selected.quantity + quantity
+        : selected.quantity - quantity;
+      setSuccess(
+        `${isPurchase ? "Purchased" : "Sold"} ${quantity} × ${selected.name} · stock now ${newStock} ${selected.unit}`
+      );
+      setQuantity(1);
       setUnitPrice("");
+      setNote("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
@@ -61,115 +115,236 @@ export default function MovementForm({
     }
   }
 
-  const accent =
-    kind === "PURCHASE"
-      ? "bg-sky-600 hover:bg-sky-700"
-      : "bg-emerald-600 hover:bg-emerald-700";
+  const inputClass =
+    "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500";
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-5">
+      <input type="hidden" name="productId" value={productId} />
+
+      {/* Product picker */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1.5 block text-sm font-medium text-slate-700">
           Product
         </label>
-        <select
-          name="productId"
-          value={productId}
-          onChange={(e) => setProductId(Number(e.target.value))}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-        >
-          {products.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} — {p.quantity} {p.unit} on hand
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <SearchIcon
+            width={16}
+            height={16}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, SKU or category…"
+            className={`${inputClass} pl-9`}
+          />
+        </div>
+        <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50 p-1.5">
+          {filtered.length === 0 && (
+            <p className="px-3 py-4 text-center text-sm text-slate-400">
+              No products match “{search}”.
+            </p>
+          )}
+          {filtered.map((p) => {
+            const active = p.id === productId;
+            const low = p.quantity <= p.reorderLevel;
+            return (
+              <button
+                type="button"
+                key={p.id}
+                onClick={() => setProductId(p.id)}
+                className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  active
+                    ? "bg-white shadow-sm ring-2 ring-emerald-500"
+                    : "hover:bg-white"
+                }`}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-slate-800">
+                    {p.name}
+                  </span>
+                  <span className="block truncate text-xs text-slate-400">
+                    {p.category}
+                    {p.supplier ? ` · ${p.supplier.name}` : ""}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={`text-xs font-medium ${
+                      p.quantity === 0
+                        ? "text-rose-600"
+                        : low
+                          ? "text-amber-600"
+                          : "text-slate-500"
+                    }`}
+                  >
+                    {p.quantity} {p.unit}
+                  </span>
+                  {active && (
+                    <CheckIcon width={16} height={16} className="text-emerald-600" />
+                  )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Selected summary */}
+      {selected && (
+        <div
+          ref={summaryRef}
+          className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"
+        >
+          <div>
+            <p className="font-semibold text-slate-800">{selected.name}</p>
+            <p className="text-xs text-slate-500">
+              On hand: {selected.quantity} {selected.unit} · Default{" "}
+              {isPurchase ? "cost" : "price"} {formatAUD(defaultPrice)}
+            </p>
+          </div>
+          {selected.quantity <= selected.reorderLevel && (
+            <Badge tone={selected.quantity === 0 ? "red" : "amber"}>
+              {selected.quantity === 0 ? "Out of stock" : "Low stock"}
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Quantity + price */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">
             Quantity
           </label>
-          <input
-            name="quantity"
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          />
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              className="flex h-11 w-11 items-center justify-center rounded-l-xl border border-r-0 border-slate-300 text-slate-500 hover:bg-slate-50"
+            >
+              <MinusIcon width={16} height={16} />
+            </button>
+            <input
+              name="quantity"
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(e) =>
+                setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+              }
+              className="h-11 w-full border-y border-slate-300 px-3 text-center text-sm focus:z-10 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+            <button
+              type="button"
+              onClick={() => setQuantity((q) => q + 1)}
+              className="flex h-11 w-11 items-center justify-center rounded-r-xl border border-l-0 border-slate-300 text-slate-500 hover:bg-slate-50"
+            >
+              <PlusIcon width={16} height={16} />
+            </button>
+          </div>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-700">
-            Unit price (ex. GST)
+          <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700">
+            <span>Unit price (ex. GST)</span>
+            {unitPrice.trim() !== "" && (
+              <button
+                type="button"
+                onClick={() => setUnitPrice("")}
+                className="text-xs font-normal text-emerald-600 hover:underline"
+              >
+                Reset to default
+              </button>
+            )}
           </label>
-          <input
-            name="unitPrice"
-            type="number"
-            step="0.01"
-            min={0}
-            placeholder={defaultPrice.toFixed(2)}
-            value={unitPrice}
-            onChange={(e) => setUnitPrice(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-          />
-          <p className="mt-1 text-xs text-slate-400">
-            Leave blank to use {formatAUD(defaultPrice)}
-          </p>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+              $
+            </span>
+            <input
+              name="unitPrice"
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder={defaultPrice.toFixed(2)}
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+              className={`${inputClass} h-11 pl-7`}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Note */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
-          Note (optional)
+        <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          Reference / note{" "}
+          <span className="font-normal text-slate-400">(optional)</span>
         </label>
         <input
           name="note"
           type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
           placeholder={
-            kind === "PURCHASE" ? "e.g. PO #1234" : "e.g. Job 88, customer name"
+            isPurchase ? "e.g. PO #1234, invoice ref" : "e.g. Job 88, customer name"
           }
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className={inputClass}
         />
       </div>
 
-      <div className="rounded-lg bg-slate-50 p-4 text-sm">
-        <div className="flex justify-between text-slate-600">
-          <span>Subtotal (ex. GST)</span>
+      {/* Order summary */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
+        <div className="flex justify-between text-slate-500">
+          <span>
+            {quantity} × {formatAUD(effectivePrice)}
+          </span>
           <span>{formatAUD(totals.ex)}</span>
         </div>
-        <div className="flex justify-between text-slate-600">
+        <div className="mt-1 flex justify-between text-slate-500">
           <span>GST (10%)</span>
           <span>{formatAUD(totals.gst)}</span>
         </div>
-        <div className="mt-1 flex justify-between border-t border-slate-200 pt-1 font-semibold text-slate-900">
+        <div className="mt-2 flex justify-between border-t border-dashed border-slate-200 pt-2 text-base font-bold text-slate-900">
           <span>Total (inc. GST)</span>
           <span>{formatAUD(totals.inc)}</span>
         </div>
       </div>
 
+      {/* Feedback */}
       {overSell && (
-        <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <p className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
           Not enough stock — only {selected?.quantity} {selected?.unit} on hand.
         </p>
       )}
       {error && (
-        <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <p className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
           {error}
+        </p>
+      )}
+      {success && (
+        <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">
+          <CheckIcon width={18} height={18} className="shrink-0" />
+          {success}
         </p>
       )}
 
       <button
         type="submit"
-        disabled={pending || qty <= 0 || overSell || !selected}
-        className={`w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${accent}`}
+        disabled={pending || quantity <= 0 || overSell || !selected}
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
       >
+        {isPurchase ? (
+          <CartIcon width={18} height={18} />
+        ) : (
+          <DollarIcon width={18} height={18} />
+        )}
         {pending
           ? "Saving…"
-          : kind === "PURCHASE"
-            ? "Record purchase (stock in)"
-            : "Record sale (stock out)"}
+          : isPurchase
+            ? `Record purchase · ${formatAUD(totals.inc)}`
+            : `Record sale · ${formatAUD(totals.inc)}`}
       </button>
     </form>
   );
