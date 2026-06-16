@@ -1,5 +1,6 @@
-import { getProducts, getTransactionsByType, getBestSellers } from "@/lib/data";
-import { recordSale } from "@/lib/actions";
+import { listProducts } from "@/server/services/products";
+import { listTransactionsByType } from "@/server/services/transactions";
+import { getBestSellers } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, ButtonLink } from "@/components/ui";
 import { CartIcon, ChartIcon } from "@/components/icons";
@@ -10,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function SalesPage() {
   const [products, recent, best] = await Promise.all([
-    getProducts(),
-    getTransactionsByType("SALE"),
+    listProducts(),
+    listTransactionsByType("SALE"),
     getBestSellers(30, 5),
   ]);
 
@@ -37,7 +38,7 @@ export default async function SalesPage() {
             Search for a product, set the quantity, and stock is updated
             instantly.
           </p>
-          <MovementForm products={products} action={recordSale} kind="SALE" />
+          <MovementForm products={products} kind="SALE" />
         </Card>
 
         <div className="lg:col-span-1">

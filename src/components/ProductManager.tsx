@@ -1,11 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatAUD, incGst } from "@/lib/money";
+import { api, type ProductPayload } from "@/lib/api";
 import { Badge, Button } from "./ui";
 import Modal from "./Modal";
 import { SearchIcon, PlusIcon, EditIcon, TrashIcon, BoxIcon } from "./icons";
-import { createProduct, updateProduct, deleteProduct } from "@/lib/actions";
+
+function formToProductPayload(form: HTMLFormElement): ProductPayload {
+  const fd = new FormData(form);
+  const supplierId = Number(fd.get("supplierId") ?? 0);
+  const numberOr = (v: FormDataEntryValue | null, d = 0) => {
+    const n = parseFloat(String(v ?? ""));
+    return Number.isFinite(n) ? n : d;
+  };
+  return {
+    name: String(fd.get("name") ?? "").trim(),
+    sku: String(fd.get("sku") ?? "").trim() || null,
+    category: String(fd.get("category") ?? "").trim() || "General",
+    unit: String(fd.get("unit") ?? "").trim() || "each",
+    costPrice: numberOr(fd.get("costPrice")),
+    salePrice: numberOr(fd.get("salePrice")),
+    quantity: Math.round(numberOr(fd.get("quantity"))),
+    reorderLevel: Math.round(numberOr(fd.get("reorderLevel"), 10)),
+    supplierId: supplierId > 0 ? supplierId : null,
+  };
+}
 
 type Supplier = { id: number; name: string };
 type Product = {
@@ -150,12 +171,48 @@ export default function ProductManager({
   products: Product[];
   suppliers: Supplier[];
 }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [sort, setSort] = useState<SortKey>("name");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [modal, setModal] = useState<{ mode: "add" | "edit"; product?: Product } | null>(
     null
   );
+
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!modal) return;
+    setError("");
+    setSaving(true);
+    try {
+      const payload = formToProductPayload(e.currentTarget);
+      if (modal.mode === "edit") await api.updateProduct(modal.product!.id, payload);
+      else await api.createProduct(payload);
+      setModal(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save product.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(product: Product) {
+    if (
+      !confirm(
+        `Delete "${product.name}"? This removes its transaction history too.`
+      )
+    )
+      return;
+    try {
+      await api.deleteProduct(product.id);
+      router.refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not delete product.");
+    }
+  }
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -317,26 +374,13 @@ export default function ProductManager({
                         >
                           <EditIcon width={16} height={16} />
                         </button>
-                        <form
-                          action={deleteProduct}
-                          onSubmit={(e) => {
-                            if (
-                              !confirm(
-                                `Delete "${p.name}"? This removes its transaction history too.`
-                              )
-                            )
-                              e.preventDefault();
-                          }}
+                        <button
+                          onClick={() => handleDelete(p)}
+                          className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-700"
+                          aria-label="Delete"
                         >
-                          <input type="hidden" name="id" value={p.id} />
-                          <button
-                            type="submit"
-                            className="rounded-lg p-2 text-rose-500 transition-colors hover:bg-rose-50 hover:text-rose-700"
-                            aria-label="Delete"
-                          >
-                            <TrashIcon width={16} height={16} />
-                          </button>
-                        </form>
+                          <TrashIcon width={16} height={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -359,27 +403,27 @@ export default function ProductManager({
         }
       >
         {modal && (
-          <form
-            action={async (fd) => {
-              if (modal.mode === "edit") await updateProduct(fd);
-              else await createProduct(fd);
-              setModal(null);
-            }}
-          >
-            {modal.mode === "edit" && (
-              <input type="hidden" name="id" value={modal.product!.id} />
-            )}
+          <form onSubmit={handleSave}>
             <ProductFields
               product={modal.product}
               suppliers={suppliers}
               showQuantity={modal.mode === "add"}
             />
+            {error && (
+              <p className="mt-4 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
+                {error}
+              </p>
+            )}
             <div className="mt-6 flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setModal(null)}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {modal.mode === "edit" ? "Save changes" : "Save product"}
+              <Button type="submit" disabled={saving}>
+                {saving
+                  ? "Saving…"
+                  : modal.mode === "edit"
+                    ? "Save changes"
+                    : "Save product"}
               </Button>
             </div>
           </form>

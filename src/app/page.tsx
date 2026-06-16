@@ -1,11 +1,11 @@
 import Link from "next/link";
+import { listLowStock } from "@/server/services/products";
+import { listTransactions } from "@/server/services/transactions";
 import {
   getStockValue,
-  getLowStock,
   getFinancials,
   getBestSellers,
-  getRecentTransactions,
-} from "@/lib/data";
+} from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard, Badge, ButtonLink } from "@/components/ui";
 import TransactionTable from "@/components/TransactionTable";
@@ -23,10 +23,10 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const [stock, lowStock, fin, best, recent] = await Promise.all([
     getStockValue(),
-    getLowStock(),
+    listLowStock(),
     getFinancials(30),
     getBestSellers(30, 5),
-    getRecentTransactions(8),
+    listTransactions(8),
   ]);
 
   const maxUnits = Math.max(1, ...best.map((b) => b.units));

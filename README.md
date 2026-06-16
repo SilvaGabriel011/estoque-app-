@@ -24,10 +24,57 @@ aimed at the Australian market.
 
 ## Tech stack
 
-- [Next.js 16](https://nextjs.org/) (App Router, server actions) + React 19
+- [Next.js 16](https://nextjs.org/) (App Router) + React 19
 - [Tailwind CSS v4](https://tailwindcss.com/)
 - [Prisma 6](https://www.prisma.io/) ORM with a PostgreSQL database (Neon)
+- [Zod](https://zod.dev/) for request validation, [Vitest](https://vitest.dev/) for tests
 - TypeScript
+
+## Architecture
+
+The backend (business logic + data access) is fully separated from the UI and
+exposed over a REST API. The frontend only talks to the backend over HTTP.
+
+```
+src/
+  server/                 ← backend (no React)
+    domain/               ← pure business logic (GST, stock, reports) — unit tested
+    services/             ← use-cases composing domain + Prisma
+    validation.ts         ← Zod schemas
+    http.ts, db.ts        ← API helpers + Prisma client
+  app/api/                ← REST route handlers (controllers) → call services
+  lib/api.ts              ← typed fetch client the UI uses
+  components/, app/*      ← UI (calls the REST API, never the DB directly)
+```
+
+### REST API
+
+| Method & path                | Description                          |
+| ---------------------------- | ----------------------------------- |
+| `GET    /api/products`       | List products                       |
+| `POST   /api/products`       | Create a product                    |
+| `GET    /api/products/:id`   | Get one product                     |
+| `PATCH  /api/products/:id`   | Update a product                    |
+| `DELETE /api/products/:id`   | Delete a product                    |
+| `GET    /api/suppliers`      | List suppliers                      |
+| `POST   /api/suppliers`      | Create a supplier                   |
+| `DELETE /api/suppliers/:id`  | Delete a supplier                   |
+| `GET    /api/transactions`   | List movements (`?type=SALE`)       |
+| `POST   /api/transactions`   | Record a purchase or sale           |
+| `GET    /api/reports`        | Financials + best sellers (`?days`) |
+
+Errors are returned as JSON: validation → `422`, business rules (e.g. selling
+more than is in stock) → `400`, not found → `404`.
+
+## Testing
+
+Business logic lives in pure, dependency-free functions, so the test suite runs
+without a database (the service layer is tested with an injected fake client).
+
+```bash
+npm test          # run once
+npm run test:watch
+```
 
 ## Getting started (local)
 

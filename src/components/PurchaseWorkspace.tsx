@@ -8,11 +8,9 @@ import MovementForm, { ProductLite } from "./MovementForm";
 export default function PurchaseWorkspace({
   products,
   lowStock,
-  action,
 }: {
   products: ProductLite[];
   lowStock: ProductLite[];
-  action: (formData: FormData) => Promise<void>;
 }) {
   const [requested, setRequested] = useState<number | null>(null);
 
@@ -35,7 +33,6 @@ export default function PurchaseWorkspace({
         </p>
         <MovementForm
           products={products}
-          action={action}
           kind="PURCHASE"
           requestedProductId={requested}
           key={tick}
