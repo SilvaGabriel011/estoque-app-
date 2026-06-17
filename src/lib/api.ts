@@ -21,11 +21,23 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export type MovementPayload = {
-  type: "PURCHASE" | "SALE";
+  type: "PURCHASE" | "USAGE";
   productId: number;
   quantity: number;
   unitPrice?: number | null;
   note?: string | null;
+};
+
+export type Product = {
+  id: number;
+  name: string;
+  sku: string | null;
+  category: string;
+  unit: string;
+  costPrice: number;
+  quantity: number;
+  reorderLevel: number;
+  supplierId: number | null;
 };
 
 export type ProductPayload = {
@@ -34,7 +46,6 @@ export type ProductPayload = {
   category?: string;
   unit?: string;
   costPrice?: number;
-  salePrice?: number;
   quantity?: number;
   reorderLevel?: number;
   supplierId?: number | null;
@@ -63,23 +74,19 @@ export type AlertsResponse = { count: number; items: AlertItem[] };
 export type ReportsResponse = {
   days: number;
   financials: {
-    salesEx: number;
-    salesGst: number;
-    salesInc: number;
     purchasesEx: number;
     purchasesGst: number;
     purchasesInc: number;
-    cogs: number;
-    grossProfit: number;
-    gstPayable: number;
-    saleCount: number;
+    purchaseCount: number;
+    usageCost: number;
+    usageCount: number;
   };
-  bestSellers: {
+  mostUsed: {
     product: { id: number; name: string; unit: string };
     units: number;
-    revenue: number;
+    cost: number;
   }[];
-  stock: { atCost: number; atRetail: number; units: number; skus: number };
+  stock: { atCost: number; units: number; skus: number };
 };
 
 export const api = {
@@ -90,7 +97,10 @@ export const api = {
     }),
 
   createProduct: (payload: ProductPayload) =>
-    request("/api/products", { method: "POST", body: JSON.stringify(payload) }),
+    request<Product>("/api/products", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   updateProduct: (id: number, payload: Partial<ProductPayload>) =>
     request(`/api/products/${id}`, {

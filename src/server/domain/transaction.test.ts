@@ -5,34 +5,39 @@ import {
   nextQuantity,
   ensureSufficientStock,
   ensureValidQuantity,
+  appliesGst,
 } from "./transaction";
 import { DomainError } from "./errors";
 
-const product = { costPrice: 5.5, salePrice: 8.7 };
+const product = { costPrice: 5.5 };
 
 describe("resolveUnitPrice", () => {
-  it("defaults to cost price for purchases", () => {
+  it("defaults to cost price for both purchase and usage", () => {
     expect(resolveUnitPrice("PURCHASE", product)).toBe(5.5);
-  });
-
-  it("defaults to sale price for sales", () => {
-    expect(resolveUnitPrice("SALE", product)).toBe(8.7);
+    expect(resolveUnitPrice("USAGE", product)).toBe(5.5);
   });
 
   it("uses an explicit override when provided", () => {
-    expect(resolveUnitPrice("SALE", product, 7.25)).toBe(7.25);
+    expect(resolveUnitPrice("PURCHASE", product, 7.25)).toBe(7.25);
     expect(resolveUnitPrice("PURCHASE", product, 0)).toBe(0);
   });
 
   it("ignores null/negative overrides", () => {
-    expect(resolveUnitPrice("SALE", product, null)).toBe(8.7);
-    expect(resolveUnitPrice("SALE", product, -3)).toBe(8.7);
+    expect(resolveUnitPrice("PURCHASE", product, null)).toBe(5.5);
+    expect(resolveUnitPrice("PURCHASE", product, -3)).toBe(5.5);
+  });
+});
+
+describe("appliesGst", () => {
+  it("applies to purchases but not usage", () => {
+    expect(appliesGst("PURCHASE")).toBe(true);
+    expect(appliesGst("USAGE")).toBe(false);
   });
 });
 
 describe("lineTotals", () => {
-  it("computes ex, GST (10%) and inclusive total", () => {
-    expect(lineTotals(8.7, 1)).toEqual({
+  it("adds GST when applicable (purchases)", () => {
+    expect(lineTotals(8.7, 1, true)).toEqual({
       unitPrice: 8.7,
       quantity: 1,
       ex: 8.7,
@@ -41,31 +46,31 @@ describe("lineTotals", () => {
     });
   });
 
-  it("scales with quantity", () => {
-    expect(lineTotals(5.5, 10)).toEqual({
+  it("omits GST for internal usage", () => {
+    expect(lineTotals(5.5, 2, false)).toEqual({
       unitPrice: 5.5,
-      quantity: 10,
-      ex: 55,
-      gst: 5.5,
-      total: 60.5,
+      quantity: 2,
+      ex: 11,
+      gst: 0,
+      total: 11,
     });
   });
 });
 
 describe("nextQuantity", () => {
-  it("adds on purchase and subtracts on sale", () => {
+  it("adds on purchase and subtracts on usage", () => {
     expect(nextQuantity("PURCHASE", 10, 5)).toBe(15);
-    expect(nextQuantity("SALE", 10, 4)).toBe(6);
+    expect(nextQuantity("USAGE", 10, 4)).toBe(6);
   });
 });
 
 describe("ensureSufficientStock", () => {
-  it("allows a sale within stock", () => {
-    expect(() => ensureSufficientStock("SALE", 10, 10)).not.toThrow();
+  it("allows usage within stock", () => {
+    expect(() => ensureSufficientStock("USAGE", 10, 10)).not.toThrow();
   });
 
-  it("throws a DomainError when a sale exceeds stock", () => {
-    expect(() => ensureSufficientStock("SALE", 3, 5, "Clear Silicone")).toThrow(
+  it("throws when usage exceeds stock", () => {
+    expect(() => ensureSufficientStock("USAGE", 3, 5, "Clear Silicone")).toThrow(
       DomainError
     );
   });

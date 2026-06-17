@@ -66,6 +66,15 @@ export function CartIcon(p: IconProps) {
   );
 }
 
+// Usage = stock consumed on jobs (a wrench / tool).
+export function UsageIcon(p: IconProps) {
+  return (
+    <svg {...base} {...p}>
+      <path d="M14.7 6.3a4 4 0 0 0-5.34 5.34L3 18l3 3 6.36-6.36a4 4 0 0 0 5.34-5.34l-2.6 2.6-2.4-.6-.6-2.4Z" />
+    </svg>
+  );
+}
+
 export function DollarIcon(p: IconProps) {
   return (
     <svg {...base} {...p}>

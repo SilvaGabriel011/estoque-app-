@@ -36,8 +36,8 @@ export default function TransactionTable({
   const { pageItems, pageCount, safePage } = pageSlice(rows, page, pageSize);
 
   const TypeBadge = ({ type }: { type: string }) => (
-    <Badge tone={type === "SALE" ? "green" : "blue"}>
-      {type === "SALE" ? "Sale" : "Purchase"}
+    <Badge tone={type === "PURCHASE" ? "blue" : "green"}>
+      {type === "PURCHASE" ? "Purchase" : "Used"}
     </Badge>
   );
 

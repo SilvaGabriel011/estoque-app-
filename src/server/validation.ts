@@ -6,7 +6,6 @@ export const productInputSchema = z.object({
   category: z.string().trim().min(1).default("General"),
   unit: z.string().trim().min(1).default("each"),
   costPrice: z.coerce.number().min(0).default(0),
-  salePrice: z.coerce.number().min(0).default(0),
   quantity: z.coerce.number().int().min(0).default(0),
   reorderLevel: z.coerce.number().int().min(0).default(10),
   supplierId: z.coerce.number().int().positive().nullable().optional(),
@@ -25,7 +24,7 @@ export const supplierInputSchema = z.object({
 });
 
 export const movementInputSchema = z.object({
-  type: z.enum(["PURCHASE", "SALE"]),
+  type: z.enum(["PURCHASE", "USAGE"]),
   productId: z.coerce.number().int().positive(),
   quantity: z.coerce.number().int().positive(),
   unitPrice: z.coerce.number().min(0).nullable().optional(),

@@ -12,7 +12,7 @@ export const GET = route(async (req: Request) => {
   const url = new URL(req.url);
   const type = url.searchParams.get("type");
   const limit = Number(url.searchParams.get("limit") ?? "20");
-  if (type === "PURCHASE" || type === "SALE") {
+  if (type === "PURCHASE" || type === "USAGE") {
     return ok(await listTransactionsByType(type, limit));
   }
   return ok(await listTransactions(limit));
