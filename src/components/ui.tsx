@@ -57,6 +57,7 @@ export function StatCard({
   icon,
   accent = "slate",
   valueTone,
+  tooltip,
 }: {
   label: string;
   value: string;
@@ -64,6 +65,7 @@ export function StatCard({
   icon?: ReactNode;
   accent?: keyof typeof accentMap;
   valueTone?: "good" | "bad";
+  tooltip?: string;
 }) {
   const a = accentMap[accent];
   const valueClass =
@@ -73,7 +75,11 @@ export function StatCard({
         ? "text-rose-600"
         : "text-slate-900";
   return (
-    <Card className="transition-shadow hover:shadow-md">
+    <Card
+      className={`group relative transition-shadow hover:shadow-md ${
+        tooltip ? "cursor-help" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-medium text-slate-500 sm:text-sm">{label}</p>
         {icon && (
@@ -88,6 +94,13 @@ export function StatCard({
         {value}
       </p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+
+      {tooltip && (
+        <div className="pointer-events-none absolute left-4 right-4 top-full z-30 mt-2 origin-top rounded-xl bg-brand-800 px-3 py-2 text-xs leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+          {tooltip}
+          <span className="absolute -top-1 left-6 h-2 w-2 rotate-45 bg-brand-800" />
+        </div>
+      )}
     </Card>
   );
 }
