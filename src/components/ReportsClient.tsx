@@ -117,7 +117,8 @@ export default function ReportsClient() {
           />
         </div>
 
-        <Card className="mt-4">
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <Card>
           <h3 className="mb-3 text-sm font-semibold text-slate-700">
             Purchasing breakdown
           </h3>
@@ -132,10 +133,8 @@ export default function ReportsClient() {
           </div>
         </Card>
 
-        <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Most-used items
-        </h2>
         <Card>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700">Most-used items</h3>
           {mostUsed.length === 0 ? (
             <p className="text-sm text-slate-500">
               {loading ? "Loading…" : "No usage recorded in this period."}
@@ -168,6 +167,7 @@ export default function ReportsClient() {
             </ol>
           )}
         </Card>
+        </div>
       </div>
     </div>
   );

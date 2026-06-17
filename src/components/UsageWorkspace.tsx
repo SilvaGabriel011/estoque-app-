@@ -38,7 +38,7 @@ export default function UsageWorkspace({
       />
 
       {tab === "record" && (
-        <div className="mx-auto max-w-2xl">
+        <div>
           <p className="mb-4 text-sm text-slate-500">
             Pick an item you have in stock and record how much you used on a job.
             This reduces the quantity on hand.
@@ -48,13 +48,13 @@ export default function UsageWorkspace({
       )}
 
       {tab === "top" && (
-        <div className="mx-auto max-w-2xl">
+        <div>
           {mostUsed.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-500">
               No usage recorded yet.
             </p>
           ) : (
-            <ul className="space-y-3.5">
+            <ul className="grid gap-x-8 gap-y-3.5 sm:grid-cols-2">
               {mostUsed.map((b, i) => (
                 <li key={b.product.id} className="flex items-center gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
