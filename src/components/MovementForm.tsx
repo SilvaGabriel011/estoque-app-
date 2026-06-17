@@ -12,6 +12,7 @@ import {
   CheckIcon,
   CartIcon,
   UsageIcon,
+  CloseIcon,
 } from "./icons";
 
 export type ProductLite = {
@@ -74,8 +75,19 @@ export default function MovementForm({
 
   const selected = products.find((p) => p.id === productId) ?? null;
   const defaultPrice = selected ? selected.costPrice : 0;
-  const effectivePrice =
-    unitPrice.trim() === "" ? defaultPrice : parseFloat(unitPrice) || 0;
+  // When creating a new item the price comes from the new-item cost field;
+  // otherwise it's the override or the selected product's cost.
+  const effectivePrice = creating
+    ? parseFloat(newItem.costPrice) || 0
+    : unitPrice.trim() === ""
+      ? defaultPrice
+      : parseFloat(unitPrice) || 0;
+
+  function cancelCreating() {
+    setCreating(false);
+    setError("");
+    setNewItem({ name: "", unit: "each", category: "General", costPrice: "", reorderLevel: "10" });
+  }
 
   const totals = useMemo(() => {
     const ex = effectivePrice * quantity;
@@ -272,10 +284,11 @@ export default function MovementForm({
             <h3 className="text-sm font-semibold text-slate-800">New item</h3>
             <button
               type="button"
-              onClick={() => setCreating(false)}
-              className="text-xs font-medium text-slate-500 hover:text-slate-700"
+              onClick={cancelCreating}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
             >
-              ← Pick existing
+              <CloseIcon width={13} height={13} />
+              Cancel
             </button>
           </div>
           <input
@@ -459,18 +472,30 @@ export default function MovementForm({
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={submitDisabled}
-        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
-      >
-        {isPurchase ? <CartIcon width={18} height={18} /> : <UsageIcon width={18} height={18} />}
-        {pending
-          ? "Saving…"
-          : isPurchase
-            ? `Record purchase · ${formatAUD(totals.inc)}`
-            : "Mark as used"}
-      </button>
+      <div className="flex gap-2">
+        {creating && (
+          <button
+            type="button"
+            onClick={cancelCreating}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <CloseIcon width={16} height={16} />
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitDisabled}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
+        >
+          {isPurchase ? <CartIcon width={18} height={18} /> : <UsageIcon width={18} height={18} />}
+          {pending
+            ? "Saving…"
+            : isPurchase
+              ? `Record purchase · ${formatAUD(totals.inc)}`
+              : "Mark as used"}
+        </button>
+      </div>
     </form>
   );
 }
