@@ -50,6 +50,7 @@ export default async function DashboardPage() {
           hint="Inventory on hand"
           icon={<BoxIcon width={18} height={18} />}
           accent="sky"
+          tooltip="Total cost-price value (ex-GST) of all stock currently on hand."
         />
         <StatCard
           label="Units on hand"
@@ -57,6 +58,7 @@ export default async function DashboardPage() {
           hint={`Across ${stock.skus} products`}
           icon={<BoxIcon width={18} height={18} />}
           accent="violet"
+          tooltip="Sum of the quantities in stock across every product."
         />
         <StatCard
           label="Products (SKUs)"
@@ -64,6 +66,7 @@ export default async function DashboardPage() {
           hint="In the catalogue"
           icon={<CartIcon width={18} height={18} />}
           accent="slate"
+          tooltip="Number of distinct products (SKUs) in your catalogue."
         />
         <StatCard
           label="Low stock items"
@@ -71,6 +74,7 @@ export default async function DashboardPage() {
           hint="At or below reorder level"
           icon={<AlertIcon width={18} height={18} />}
           accent={lowStock.length > 0 ? "amber" : "emerald"}
+          tooltip="Products at or below their reorder level — reorder these soon."
         />
       </div>
 
