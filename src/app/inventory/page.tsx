@@ -21,7 +21,7 @@ export default async function InventoryPage() {
     <div>
       <PageHeader
         title="Inventory"
-        subtitle="Manage your product catalogue, pricing and reorder levels."
+        subtitle="Manage your item catalogue, costs and reorder levels."
         action={
           <ButtonLink href="/purchases" variant="secondary">
             <CartIcon width={16} height={16} />
@@ -41,7 +41,7 @@ export default async function InventoryPage() {
         <StatCard
           label="Stock value (at cost)"
           value={formatAUD(stock.atCost)}
-          hint={`Retail ${formatAUD(stock.atRetail)}`}
+          hint="Inventory on hand"
           icon={<DollarIcon width={18} height={18} />}
           accent="emerald"
         />

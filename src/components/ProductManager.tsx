@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatAUD, incGst } from "@/lib/money";
+import { formatAUD } from "@/lib/money";
 import { api, type ProductPayload } from "@/lib/api";
 import { Badge, Button } from "./ui";
 import Modal from "./Modal";
@@ -22,7 +22,6 @@ function formToProductPayload(form: HTMLFormElement): ProductPayload {
     category: String(fd.get("category") ?? "").trim() || "General",
     unit: String(fd.get("unit") ?? "").trim() || "each",
     costPrice: numberOr(fd.get("costPrice")),
-    salePrice: numberOr(fd.get("salePrice")),
     quantity: Math.round(numberOr(fd.get("quantity"))),
     reorderLevel: Math.round(numberOr(fd.get("reorderLevel"), 10)),
     supplierId: supplierId > 0 ? supplierId : null,
@@ -37,7 +36,6 @@ type Product = {
   category: string;
   unit: string;
   costPrice: number;
-  salePrice: number;
   quantity: number;
   reorderLevel: number;
   supplierId: number | null;
@@ -129,17 +127,6 @@ function ProductFields({
           step="0.01"
           min={0}
           defaultValue={product?.costPrice ?? 0}
-          className={inputClass}
-        />
-      </div>
-      <div>
-        <Label>Sale price (ex. GST)</Label>
-        <input
-          name="salePrice"
-          type="number"
-          step="0.01"
-          min={0}
-          defaultValue={product?.salePrice ?? 0}
           className={inputClass}
         />
       </div>
@@ -347,7 +334,7 @@ export default function ProductManager({
                     <StockBar p={p} />
                   </div>
                   <div className="mt-3 flex items-end justify-between border-t border-slate-100 pt-3">
-                    <dl className="grid grid-cols-3 gap-3 text-xs">
+                    <dl className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <dt className="text-slate-400">Cost</dt>
                         <dd className="font-medium text-slate-700">
@@ -355,13 +342,7 @@ export default function ProductManager({
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-slate-400">Sale inc.</dt>
-                        <dd className="font-medium text-slate-700">
-                          {formatAUD(incGst(p.salePrice))}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-slate-400">Value</dt>
+                        <dt className="text-slate-400">Stock value</dt>
                         <dd className="font-medium text-slate-700">
                           {formatAUD(p.costPrice * p.quantity)}
                         </dd>
@@ -399,7 +380,6 @@ export default function ProductManager({
                     <th className="px-4 py-3 font-medium">Category</th>
                     <th className="px-4 py-3 font-medium">Stock</th>
                     <th className="px-4 py-3 text-right font-medium">Cost</th>
-                    <th className="px-4 py-3 text-right font-medium">Sale (inc GST)</th>
                     <th className="px-4 py-3 text-right font-medium">Stock value</th>
                     <th className="px-4 py-3 text-right font-medium">Actions</th>
                   </tr>
@@ -434,9 +414,6 @@ export default function ProductManager({
                         </td>
                         <td className="px-4 py-3 text-right text-slate-600">
                           {formatAUD(p.costPrice)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-slate-600">
-                          {formatAUD(incGst(p.salePrice))}
                         </td>
                         <td className="px-4 py-3 text-right font-medium text-slate-700">
                           {formatAUD(p.costPrice * p.quantity)}

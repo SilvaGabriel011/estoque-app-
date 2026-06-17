@@ -3,28 +3,27 @@
 import { useState } from "react";
 import { Card } from "./ui";
 import { SegmentedTabs } from "./controls";
-import { DollarIcon, ChartIcon, BoxIcon } from "./icons";
+import { UsageIcon, ChartIcon, BoxIcon } from "./icons";
 import MovementForm, { ProductLite } from "./MovementForm";
 import TransactionTable from "./TransactionTable";
 
 type Row = React.ComponentProps<typeof TransactionTable>["rows"][number];
-type BestSeller = {
+type MostUsed = {
   product: { id: number; name: string; unit: string };
   units: number;
-  revenue: number;
 };
 
-export default function SalesWorkspace({
+export default function UsageWorkspace({
   products,
-  best,
+  mostUsed,
   recent,
 }: {
   products: ProductLite[];
-  best: BestSeller[];
+  mostUsed: MostUsed[];
   recent: Row[];
 }) {
   const [tab, setTab] = useState("record");
-  const maxUnits = Math.max(1, ...best.map((b) => b.units));
+  const maxUnits = Math.max(1, ...mostUsed.map((b) => b.units));
 
   return (
     <Card>
@@ -32,27 +31,31 @@ export default function SalesWorkspace({
         value={tab}
         onChange={setTab}
         tabs={[
-          { key: "record", label: "Record", icon: <DollarIcon width={15} height={15} /> },
-          { key: "top", label: "Top sellers", icon: <ChartIcon width={15} height={15} /> },
+          { key: "record", label: "Use", icon: <UsageIcon width={15} height={15} /> },
+          { key: "top", label: "Most used", icon: <ChartIcon width={15} height={15} /> },
           { key: "history", label: "History", icon: <BoxIcon width={15} height={15} /> },
         ]}
       />
 
       {tab === "record" && (
         <div className="mx-auto max-w-2xl">
-          <MovementForm products={products} kind="SALE" />
+          <p className="mb-4 text-sm text-slate-500">
+            Pick an item you have in stock and record how much you used on a job.
+            This reduces the quantity on hand.
+          </p>
+          <MovementForm products={products} kind="USAGE" />
         </div>
       )}
 
       {tab === "top" && (
         <div className="mx-auto max-w-2xl">
-          {best.length === 0 ? (
+          {mostUsed.length === 0 ? (
             <p className="py-10 text-center text-sm text-slate-500">
-              No sales recorded yet.
+              No usage recorded yet.
             </p>
           ) : (
             <ul className="space-y-3.5">
-              {best.map((b, i) => (
+              {mostUsed.map((b, i) => (
                 <li key={b.product.id} className="flex items-center gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
                     {i + 1}
@@ -81,7 +84,7 @@ export default function SalesWorkspace({
       )}
 
       {tab === "history" && (
-        <TransactionTable rows={recent} emptyLabel="No sales recorded yet." />
+        <TransactionTable rows={recent} emptyLabel="No usage recorded yet." />
       )}
     </Card>
   );

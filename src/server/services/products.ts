@@ -30,7 +30,6 @@ export function createProduct(input: ProductInput) {
       category: input.category,
       unit: input.unit,
       costPrice: input.costPrice,
-      salePrice: input.salePrice,
       quantity: input.quantity,
       reorderLevel: input.reorderLevel,
       supplierId: input.supplierId ?? null,
@@ -50,7 +49,6 @@ export async function updateProduct(id: number, input: Partial<ProductInput>) {
       category: input.category ?? undefined,
       unit: input.unit ?? undefined,
       costPrice: input.costPrice ?? undefined,
-      salePrice: input.salePrice ?? undefined,
       reorderLevel: input.reorderLevel ?? undefined,
       supplierId:
         input.supplierId === undefined ? undefined : input.supplierId ?? null,

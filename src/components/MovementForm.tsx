@@ -11,7 +11,7 @@ import {
   MinusIcon,
   CheckIcon,
   CartIcon,
-  DollarIcon,
+  UsageIcon,
 } from "./icons";
 
 export type ProductLite = {
@@ -23,9 +23,11 @@ export type ProductLite = {
   quantity: number;
   reorderLevel: number;
   costPrice: number;
-  salePrice: number;
   supplier?: { name: string } | null;
 };
+
+const inputClass =
+  "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
 
 export default function MovementForm({
   products,
@@ -33,10 +35,12 @@ export default function MovementForm({
   requestedProductId,
 }: {
   products: ProductLite[];
-  kind: "PURCHASE" | "SALE";
+  kind: "PURCHASE" | "USAGE";
   requestedProductId?: number | null;
 }) {
   const router = useRouter();
+  const isPurchase = kind === "PURCHASE";
+
   const [productId, setProductId] = useState<number>(products[0]?.id ?? 0);
   const [search, setSearch] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -44,12 +48,23 @@ export default function MovementForm({
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [success, setSuccess] = useState<string>("");
+  const [success, setSuccess] = useState("");
+
+  // Inline "new item" creation (purchases only)
+  const [creating, setCreating] = useState(false);
+  const [newItem, setNewItem] = useState({
+    name: "",
+    unit: "each",
+    category: "General",
+    costPrice: "",
+    reorderLevel: "10",
+  });
+
   const summaryRef = useRef<HTMLDivElement>(null);
 
-  // Allow an external trigger (e.g. low-stock chips) to pick a product.
   useEffect(() => {
     if (requestedProductId && requestedProductId !== productId) {
+      setCreating(false);
       setProductId(requestedProductId);
       setSearch("");
       summaryRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -58,20 +73,15 @@ export default function MovementForm({
   }, [requestedProductId]);
 
   const selected = products.find((p) => p.id === productId) ?? null;
-  const defaultPrice = selected
-    ? kind === "PURCHASE"
-      ? selected.costPrice
-      : selected.salePrice
-    : 0;
-
+  const defaultPrice = selected ? selected.costPrice : 0;
   const effectivePrice =
     unitPrice.trim() === "" ? defaultPrice : parseFloat(unitPrice) || 0;
 
   const totals = useMemo(() => {
     const ex = effectivePrice * quantity;
-    const gst = Math.round(ex * GST_RATE * 100) / 100;
+    const gst = isPurchase ? Math.round(ex * GST_RATE * 100) / 100 : 0;
     return { ex, gst, inc: ex + gst };
-  }, [effectivePrice, quantity]);
+  }, [effectivePrice, quantity, isPurchase]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -84,123 +94,237 @@ export default function MovementForm({
     );
   }, [products, search]);
 
-  const overSell = kind === "SALE" && selected ? quantity > selected.quantity : false;
-  const isPurchase = kind === "PURCHASE";
-  const accentBtn = isPurchase
-    ? "bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-500"
-    : "bg-brand-400 text-brand-900 hover:bg-brand-500 focus-visible:ring-brand-500";
+  const overUse = !isPurchase && selected ? quantity > selected.quantity : false;
+
+  function startCreating() {
+    setCreating(true);
+    setError("");
+    setSuccess("");
+    setNewItem((n) => ({ ...n, name: search.trim() }));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (!selected) {
-      setError("Select a product first.");
-      return;
-    }
     setPending(true);
     try {
+      let targetId = selected?.id ?? 0;
+      let targetName = selected?.name ?? "";
+      let targetUnit = selected?.unit ?? "";
+
+      // Purchase of a brand-new item: create it first.
+      if (isPurchase && creating) {
+        const cost = parseFloat(newItem.costPrice) || 0;
+        if (!newItem.name.trim()) throw new Error("Enter a name for the new item.");
+        const created = await api.createProduct({
+          name: newItem.name.trim(),
+          unit: newItem.unit.trim() || "each",
+          category: newItem.category.trim() || "General",
+          costPrice: cost,
+          reorderLevel: Math.round(parseFloat(newItem.reorderLevel) || 0),
+          quantity: 0,
+        });
+        targetId = created.id;
+        targetName = created.name;
+        targetUnit = created.unit;
+      } else if (!selected) {
+        throw new Error("Select an item first.");
+      }
+
+      const priceOverride =
+        isPurchase && unitPrice.trim() !== "" ? parseFloat(unitPrice) : undefined;
+
       await api.recordMovement({
         type: kind,
-        productId: selected.id,
+        productId: targetId,
         quantity,
-        unitPrice: unitPrice.trim() === "" ? null : parseFloat(unitPrice),
+        unitPrice: priceOverride ?? null,
         note: note.trim() || null,
       });
-      const newStock = isPurchase
-        ? selected.quantity + quantity
-        : selected.quantity - quantity;
+
+      const baseQty = creating ? 0 : selected?.quantity ?? 0;
+      const newStock = isPurchase ? baseQty + quantity : baseQty - quantity;
       setSuccess(
-        `${isPurchase ? "Purchased" : "Sold"} ${quantity} × ${selected.name} · stock now ${newStock} ${selected.unit}`
+        isPurchase
+          ? `Purchased ${quantity} × ${targetName} · stock now ${newStock} ${targetUnit}`
+          : `Used ${quantity} × ${targetName} · stock now ${newStock} ${targetUnit}`
       );
       setQuantity(1);
       setUnitPrice("");
       setNote("");
+      setCreating(false);
+      setNewItem({ name: "", unit: "each", category: "General", costPrice: "", reorderLevel: "10" });
       router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setPending(false);
     }
   }
 
-  const inputClass =
-    "w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
+  const accentBtn = isPurchase
+    ? "bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-500"
+    : "bg-brand-400 text-brand-900 hover:bg-brand-500 focus-visible:ring-brand-500";
+
+  const submitDisabled =
+    pending ||
+    quantity <= 0 ||
+    overUse ||
+    (isPurchase && creating ? !newItem.name.trim() : !selected);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Item picker */}
+      {!creating && (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            Item
+          </label>
+          <div className="relative">
+            <SearchIcon
+              width={18}
+              height={18}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={
+                isPurchase
+                  ? "Search items, or type a new item name…"
+                  : "Search the items you have in stock…"
+              }
+              className={`${inputClass} py-3 pl-10`}
+            />
+            {search && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                {filtered.length} match{filtered.length === 1 ? "" : "es"}
+              </span>
+            )}
+          </div>
 
-      {/* Product picker */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-slate-700">
-          Product
-        </label>
-        <div className="relative">
-          <SearchIcon
-            width={16}
-            height={16}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-          />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, SKU or category…"
-            className={`${inputClass} pl-9`}
-          />
-        </div>
-        <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50 p-1.5">
-          {filtered.length === 0 && (
-            <p className="px-3 py-4 text-center text-sm text-slate-400">
-              No products match “{search}”.
-            </p>
+          <div className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50 p-1.5">
+            {filtered.map((p) => {
+              const active = p.id === productId;
+              const low = p.quantity <= p.reorderLevel;
+              return (
+                <button
+                  type="button"
+                  key={p.id}
+                  onClick={() => setProductId(p.id)}
+                  className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    active ? "bg-white shadow-sm ring-2 ring-brand-500" : "hover:bg-white"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-slate-800">
+                      {p.name}
+                    </span>
+                    <span className="block truncate text-xs text-slate-400">
+                      {p.category}
+                      {p.supplier ? ` · ${p.supplier.name}` : ""}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span
+                      className={`text-xs font-medium ${
+                        p.quantity === 0
+                          ? "text-rose-600"
+                          : low
+                            ? "text-amber-600"
+                            : "text-slate-500"
+                      }`}
+                    >
+                      {p.quantity} {p.unit}
+                    </span>
+                    {active && <CheckIcon width={16} height={16} className="text-brand-600" />}
+                  </span>
+                </button>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="px-3 py-4 text-center text-sm text-slate-400">
+                {isPurchase
+                  ? `No item called “${search}” yet.`
+                  : `No stock matches “${search}”.`}
+              </p>
+            )}
+          </div>
+
+          {isPurchase && (
+            <button
+              type="button"
+              onClick={startCreating}
+              className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
+            >
+              <PlusIcon width={15} height={15} />
+              {search.trim() ? `Add “${search.trim()}” as a new item` : "Buy a new item not in the list"}
+            </button>
           )}
-          {filtered.map((p) => {
-            const active = p.id === productId;
-            const low = p.quantity <= p.reorderLevel;
-            return (
-              <button
-                type="button"
-                key={p.id}
-                onClick={() => setProductId(p.id)}
-                className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                  active
-                    ? "bg-white shadow-sm ring-2 ring-brand-500"
-                    : "hover:bg-white"
-                }`}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-medium text-slate-800">
-                    {p.name}
-                  </span>
-                  <span className="block truncate text-xs text-slate-400">
-                    {p.category}
-                    {p.supplier ? ` · ${p.supplier.name}` : ""}
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <span
-                    className={`text-xs font-medium ${
-                      p.quantity === 0
-                        ? "text-rose-600"
-                        : low
-                          ? "text-amber-600"
-                          : "text-slate-500"
-                    }`}
-                  >
-                    {p.quantity} {p.unit}
-                  </span>
-                  {active && (
-                    <CheckIcon width={16} height={16} className="text-brand-600" />
-                  )}
-                </span>
-              </button>
-            );
-          })}
         </div>
-      </div>
+      )}
+
+      {/* New item fields (purchase only) */}
+      {creating && (
+        <div className="space-y-3 rounded-xl border border-brand-200 bg-brand-50/40 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-800">New item</h3>
+            <button
+              type="button"
+              onClick={() => setCreating(false)}
+              className="text-xs font-medium text-slate-500 hover:text-slate-700"
+            >
+              ← Pick existing
+            </button>
+          </div>
+          <input
+            value={newItem.name}
+            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+            placeholder="Item name"
+            className={inputClass}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              value={newItem.unit}
+              onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+              placeholder="Unit (e.g. each, box)"
+              className={inputClass}
+            />
+            <input
+              value={newItem.category}
+              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+              placeholder="Category"
+              className={inputClass}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={newItem.costPrice}
+                onChange={(e) => setNewItem({ ...newItem, costPrice: e.target.value })}
+                placeholder="Cost (ex GST)"
+                className={`${inputClass} pl-7`}
+              />
+            </div>
+            <input
+              type="number"
+              min={0}
+              value={newItem.reorderLevel}
+              onChange={(e) => setNewItem({ ...newItem, reorderLevel: e.target.value })}
+              placeholder="Reorder level"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Selected summary */}
-      {selected && (
+      {!creating && selected && (
         <div
           ref={summaryRef}
           className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3"
@@ -208,8 +332,8 @@ export default function MovementForm({
           <div>
             <p className="font-semibold text-slate-800">{selected.name}</p>
             <p className="text-xs text-slate-500">
-              On hand: {selected.quantity} {selected.unit} · Default{" "}
-              {isPurchase ? "cost" : "price"} {formatAUD(defaultPrice)}
+              On hand: {selected.quantity} {selected.unit} · Cost{" "}
+              {formatAUD(selected.costPrice)}
             </p>
           </div>
           {selected.quantity <= selected.reorderLevel && (
@@ -220,7 +344,7 @@ export default function MovementForm({
         </div>
       )}
 
-      {/* Quantity + price */}
+      {/* Quantity + (purchase) price */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -235,13 +359,10 @@ export default function MovementForm({
               <MinusIcon width={16} height={16} />
             </button>
             <input
-              name="quantity"
               type="number"
               min={1}
               value={quantity}
-              onChange={(e) =>
-                setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-              }
+              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
               className="h-11 w-full border-y border-slate-300 px-3 text-center text-sm focus:z-10 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
@@ -253,81 +374,81 @@ export default function MovementForm({
             </button>
           </div>
         </div>
-        <div>
-          <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700">
-            <span>Unit price (ex. GST)</span>
-            {unitPrice.trim() !== "" && (
-              <button
-                type="button"
-                onClick={() => setUnitPrice("")}
-                className="text-xs font-normal text-brand-600 hover:underline"
-              >
-                Reset to default
-              </button>
-            )}
-          </label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-              $
-            </span>
-            <input
-              name="unitPrice"
-              type="number"
-              step="0.01"
-              min={0}
-              placeholder={defaultPrice.toFixed(2)}
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              className={`${inputClass} h-11 pl-7`}
-            />
+        {isPurchase && !creating && (
+          <div>
+            <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-slate-700">
+              <span>Unit cost (ex. GST)</span>
+              {unitPrice.trim() !== "" && (
+                <button
+                  type="button"
+                  onClick={() => setUnitPrice("")}
+                  className="text-xs font-normal text-brand-600 hover:underline"
+                >
+                  Reset
+                </button>
+              )}
+            </label>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                placeholder={defaultPrice.toFixed(2)}
+                value={unitPrice}
+                onChange={(e) => setUnitPrice(e.target.value)}
+                className={`${inputClass} h-11 pl-7`}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Note */}
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700">
-          Reference / note{" "}
-          <span className="font-normal text-slate-400">(optional)</span>
+          Reference / note <span className="font-normal text-slate-400">(optional)</span>
         </label>
         <input
-          name="note"
-          type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder={
-            isPurchase ? "e.g. PO #1234, invoice ref" : "e.g. Job 88, customer name"
-          }
+          placeholder={isPurchase ? "e.g. PO #1234, supplier invoice" : "e.g. Job 88, site name"}
           className={inputClass}
         />
       </div>
 
-      {/* Order summary */}
+      {/* Summary */}
       <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm">
-        <div className="flex justify-between text-slate-500">
-          <span>
-            {quantity} × {formatAUD(effectivePrice)}
-          </span>
-          <span>{formatAUD(totals.ex)}</span>
-        </div>
-        <div className="mt-1 flex justify-between text-slate-500">
-          <span>GST (10%)</span>
-          <span>{formatAUD(totals.gst)}</span>
-        </div>
-        <div className="mt-2 flex justify-between border-t border-dashed border-slate-200 pt-2 text-base font-bold text-slate-900">
-          <span>Total (inc. GST)</span>
-          <span>{formatAUD(totals.inc)}</span>
-        </div>
+        {isPurchase ? (
+          <>
+            <div className="flex justify-between text-slate-500">
+              <span>{quantity} × {formatAUD(effectivePrice)}</span>
+              <span>{formatAUD(totals.ex)}</span>
+            </div>
+            <div className="mt-1 flex justify-between text-slate-500">
+              <span>GST (10%)</span>
+              <span>{formatAUD(totals.gst)}</span>
+            </div>
+            <div className="mt-2 flex justify-between border-t border-dashed border-slate-200 pt-2 text-base font-bold text-slate-900">
+              <span>Total cost (inc. GST)</span>
+              <span>{formatAUD(totals.inc)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex justify-between font-medium text-slate-700">
+            <span>Stock value used (at cost)</span>
+            <span>{formatAUD(totals.ex)}</span>
+          </div>
+        )}
       </div>
 
-      {/* Feedback */}
-      {overSell && (
-        <p className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
+      {overUse && (
+        <p className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
           Not enough stock — only {selected?.quantity} {selected?.unit} on hand.
         </p>
       )}
       {error && (
-        <p className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
+        <p className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">
           {error}
         </p>
       )}
@@ -340,19 +461,15 @@ export default function MovementForm({
 
       <button
         type="submit"
-        disabled={pending || quantity <= 0 || overSell || !selected}
+        disabled={submitDisabled}
         className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${accentBtn}`}
       >
-        {isPurchase ? (
-          <CartIcon width={18} height={18} />
-        ) : (
-          <DollarIcon width={18} height={18} />
-        )}
+        {isPurchase ? <CartIcon width={18} height={18} /> : <UsageIcon width={18} height={18} />}
         {pending
           ? "Saving…"
           : isPurchase
             ? `Record purchase · ${formatAUD(totals.inc)}`
-            : `Record sale · ${formatAUD(totals.inc)}`}
+            : "Mark as used"}
       </button>
     </form>
   );

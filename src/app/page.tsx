@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { listLowStock } from "@/server/services/products";
 import { listTransactions } from "@/server/services/transactions";
-import { getStockValue, getBestSellers } from "@/server/services/reports";
+import { getStockValue, getMostUsed } from "@/server/services/reports";
 import { formatAUD } from "@/lib/money";
 import { PageHeader, Card, StatCard, Badge, ButtonLink } from "@/components/ui";
 import TransactionTable from "@/components/TransactionTable";
 import TopSellersChart from "@/components/TopSellersChart";
 import {
   CartIcon,
-  DollarIcon,
+  UsageIcon,
   BoxIcon,
   AlertIcon,
   ArrowRightIcon,
@@ -17,10 +17,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [stock, lowStock, best, recent] = await Promise.all([
+  const [stock, lowStock, mostUsed, recent] = await Promise.all([
     getStockValue(),
     listLowStock(),
-    getBestSellers(30, 5),
+    getMostUsed(30, 5),
     listTransactions(8),
   ]);
 
@@ -31,9 +31,9 @@ export default async function DashboardPage() {
         subtitle="Inventory at a glance · financial figures live in Reports"
         action={
           <>
-            <ButtonLink href="/sales" variant="secondary">
-              <DollarIcon width={16} height={16} />
-              Record sale
+            <ButtonLink href="/usage" variant="secondary">
+              <UsageIcon width={16} height={16} />
+              Mark used
             </ButtonLink>
             <ButtonLink href="/purchases" variant="primary">
               <CartIcon width={16} height={16} />
@@ -118,11 +118,11 @@ export default async function DashboardPage() {
           )}
         </Card>
 
-        {/* Best sellers (units only — revenue lives in Reports) */}
+        {/* Most-used items (units, 30 days) */}
         <Card className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">
-              Top sellers <span className="text-slate-400">(units, 30 days)</span>
+              Most used <span className="text-slate-400">(units, 30 days)</span>
             </h2>
             <Link
               href="/reports"
@@ -131,11 +131,11 @@ export default async function DashboardPage() {
               Full report <ArrowRightIcon width={14} height={14} />
             </Link>
           </div>
-          {best.length === 0 ? (
-            <p className="text-sm text-slate-500">No sales recorded yet.</p>
+          {mostUsed.length === 0 ? (
+            <p className="text-sm text-slate-500">No usage recorded yet.</p>
           ) : (
             <TopSellersChart
-              items={best.map((b) => ({
+              items={mostUsed.map((b) => ({
                 id: b.product.id,
                 name: b.product.name,
                 unit: b.product.unit,

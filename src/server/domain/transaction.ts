@@ -1,24 +1,25 @@
 import { GST_RATE, round2 } from "@/lib/money";
 import { DomainError } from "./errors";
 
-export type MovementKind = "PURCHASE" | "SALE";
+// The business buys stock to consume internally — it does not resell.
+// Stock moves in via PURCHASE and out via USAGE (consumed on jobs).
+export type MovementKind = "PURCHASE" | "USAGE";
 
 export type PricedProduct = {
   costPrice: number;
-  salePrice: number;
 };
 
 /**
- * Picks the unit price for a movement: an explicit override when provided
- * (>= 0), otherwise the product's cost (purchase) or sale (sale) price.
+ * Unit price for a movement, in AUD ex-GST. Defaults to the product's cost
+ * price (what stock is worth) unless an explicit override is given.
  */
 export function resolveUnitPrice(
-  kind: MovementKind,
+  _kind: MovementKind,
   product: PricedProduct,
   provided?: number | null
 ): number {
   if (provided != null && provided >= 0) return provided;
-  return kind === "PURCHASE" ? product.costPrice : product.salePrice;
+  return product.costPrice;
 }
 
 export type LineTotals = {
@@ -29,15 +30,27 @@ export type LineTotals = {
   total: number;
 };
 
-/** Computes ex-GST subtotal, GST (10%) and GST-inclusive total for a line. */
-export function lineTotals(unitPrice: number, quantity: number): LineTotals {
+/**
+ * Line totals in AUD. GST (10%) applies to purchases (it's paid to the
+ * supplier and is claimable); internal usage carries no GST.
+ */
+export function lineTotals(
+  unitPrice: number,
+  quantity: number,
+  applyGst = true
+): LineTotals {
   const ex = round2(unitPrice * quantity);
-  const gst = round2(ex * GST_RATE);
+  const gst = applyGst ? round2(ex * GST_RATE) : 0;
   const total = round2(ex + gst);
   return { unitPrice, quantity, ex, gst, total };
 }
 
-/** Stock on hand after applying a movement (purchase adds, sale removes). */
+/** Whether GST applies to a movement. */
+export function appliesGst(kind: MovementKind): boolean {
+  return kind === "PURCHASE";
+}
+
+/** Stock on hand after a movement (purchase adds, usage removes). */
 export function nextQuantity(
   kind: MovementKind,
   current: number,
@@ -46,14 +59,14 @@ export function nextQuantity(
   return kind === "PURCHASE" ? current + quantity : current - quantity;
 }
 
-/** Throws if a sale would take stock below zero. */
+/** Throws if usage would take stock below zero. */
 export function ensureSufficientStock(
   kind: MovementKind,
   current: number,
   quantity: number,
   productName = "product"
 ): void {
-  if (kind === "SALE" && quantity > current) {
+  if (kind === "USAGE" && quantity > current) {
     throw new DomainError(
       `Not enough stock: only ${current} of ${productName} on hand.`
     );

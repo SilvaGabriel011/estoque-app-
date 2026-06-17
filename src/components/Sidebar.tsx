@@ -6,7 +6,7 @@ import {
   DashboardIcon,
   BoxIcon,
   CartIcon,
-  DollarIcon,
+  UsageIcon,
   ChartIcon,
   TruckIcon,
   PlusIcon,
@@ -18,7 +18,7 @@ const nav = [
   { href: "/", label: "Dashboard", short: "Home", Icon: DashboardIcon },
   { href: "/inventory", label: "Inventory", short: "Stock", Icon: BoxIcon },
   { href: "/purchases", label: "Purchases", short: "Buy", Icon: CartIcon },
-  { href: "/sales", label: "Sales", short: "Sell", Icon: DollarIcon },
+  { href: "/usage", label: "Usage", short: "Use", Icon: UsageIcon },
   { href: "/reports", label: "Reports", short: "Reports", Icon: ChartIcon },
   { href: "/suppliers", label: "Suppliers", short: "Supply", Icon: TruckIcon },
 ];

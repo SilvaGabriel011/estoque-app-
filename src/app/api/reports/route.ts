@@ -1,7 +1,7 @@
 import { ok, route } from "@/server/http";
 import {
   getFinancials,
-  getBestSellers,
+  getMostUsed,
   getStockValue,
 } from "@/server/services/reports";
 
@@ -12,11 +12,11 @@ export const GET = route(async (req: Request) => {
   const days = Number(url.searchParams.get("days") ?? "0");
   const limit = Number(url.searchParams.get("limit") ?? "8");
 
-  const [financials, bestSellers, stock] = await Promise.all([
+  const [financials, mostUsed, stock] = await Promise.all([
     getFinancials(days),
-    getBestSellers(days, limit),
+    getMostUsed(days, limit),
     getStockValue(),
   ]);
 
-  return ok({ days, financials, bestSellers, stock });
+  return ok({ days, financials, mostUsed, stock });
 });

@@ -1,26 +1,27 @@
-# Tekton Stock Control — Consumables Inventory & Sales
+# Tekton Stock Control — Consumables Inventory & Usage
 
-A web app for managing consumables stock, built from the **CONSUMABLES STOCK**
-spreadsheet (silicones, glues, cleaning supplies, tools and protection film for
-a stone/benchtop fabrication business). Pricing is in **AUD** with **10% GST**,
-aimed at the Australian market.
+A web app for managing the consumables a business **buys to use on jobs** (it
+does not resell). Built from the **CONSUMABLES STOCK** spreadsheet (silicones,
+glues, cleaning supplies, tools and protection film for a stone/benchtop
+fabrication business). Pricing is in **AUD** with **10% GST**, aimed at the
+Australian market.
 
 ## Features
 
-- **📦 Inventory** — full product catalogue with category, SKU, supplier, cost
-  & sale price, on-hand quantity and reorder level. Search and filter, add,
-  edit and delete products.
-- **🛒 Purchases** — buy stock from suppliers (stock in). Live ex-GST / GST /
-  inc-GST totals as you type.
-- **💲 Sales** — sell items to customers (stock out), with stock-on-hand
-  validation so you can't oversell.
-- **🚨 Low stock alerts** — dashboard flags every product at or below its
-  reorder level so you know what to reorder.
-- **📈 Best sellers** — see which products sell the most (by units and revenue)
-  over 30 / 90 / 365 days or all time.
-- **💰 Financial balance** — sales revenue, cost of goods sold, gross profit and
-  margin, plus net GST payable (GST collected − GST paid).
-- **🏷️ Suppliers** — supplier directory with contacts, linked to products.
+- **📦 Inventory** — full item catalogue with category, SKU, supplier, cost,
+  on-hand quantity and reorder level. Search and filter, add, edit and delete.
+- **🛒 Purchases** — buy stock from suppliers (stock in) with live ex-GST / GST /
+  inc-GST totals. You can **buy items that aren't in the catalogue yet** — they
+  are created on the fly.
+- **🔧 Usage** — mark items as **used on jobs** (stock out), valued at cost with
+  no GST, and stock-on-hand validation so you can't go negative.
+- **🚨 Low stock alerts** — dashboard + a notifications bell flag every item at
+  or below its reorder level.
+- **📈 Most-used items** — see which items you consume the most over
+  30 / 90 / 365 days or all time.
+- **💰 Spend & consumption** — purchasing spend, GST paid (claimable) and the
+  cost value of stock consumed.
+- **🏷️ Suppliers** — supplier directory with contacts, linked to items.
 
 ## Tech stack
 
@@ -59,11 +60,12 @@ src/
 | `GET    /api/suppliers`      | List suppliers                      |
 | `POST   /api/suppliers`      | Create a supplier                   |
 | `DELETE /api/suppliers/:id`  | Delete a supplier                   |
-| `GET    /api/transactions`   | List movements (`?type=SALE`)       |
-| `POST   /api/transactions`   | Record a purchase or sale           |
-| `GET    /api/reports`        | Financials + best sellers (`?days`) |
+| `GET    /api/transactions`   | List movements (`?type=USAGE`)      |
+| `POST   /api/transactions`   | Record a purchase or usage          |
+| `GET    /api/alerts`         | Low-stock items                     |
+| `GET    /api/reports`        | Spend, usage + most-used (`?days`)  |
 
-Errors are returned as JSON: validation → `422`, business rules (e.g. selling
+Errors are returned as JSON: validation → `422`, business rules (e.g. using
 more than is in stock) → `400`, not found → `404`.
 
 ## Testing
@@ -124,12 +126,12 @@ This app is built for Vercel + [Neon Postgres](https://neon.tech/).
 
 ## Data model
 
-- **Product** — name, SKU, category, unit, `costPrice` & `salePrice` (stored
-  **ex-GST** in AUD), `quantity` on hand, `reorderLevel`, optional supplier.
+- **Product** — name, SKU, category, unit, `costPrice` (ex-GST AUD), `quantity`
+  on hand, `reorderLevel`, optional supplier.
 - **Supplier** — name, contact, phone, email, notes.
-- **Transaction** — a `PURCHASE` or `SALE` of a product: quantity, unit price
-  (ex-GST), GST amount and GST-inclusive total. Purchases increase stock; sales
-  decrease it.
+- **Transaction** — a `PURCHASE` or `USAGE` of an item: quantity, unit cost
+  (ex-GST), GST amount and total. Purchases add stock and carry GST (claimable);
+  usage removes stock, valued at cost with no GST.
 
 > Note: the database is PostgreSQL (Neon) so it works on Vercel's serverless
 > runtime. SQLite (a local file) cannot be used on Vercel because the

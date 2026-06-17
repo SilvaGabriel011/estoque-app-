@@ -246,39 +246,39 @@ async function main() {
   // ---- Sample transaction history (last ~90 days) for reports ----
   type Tx = {
     sku: string;
-    type: "PURCHASE" | "SALE";
+    type: "PURCHASE" | "USAGE";
     quantity: number;
     daysAgo: number;
-    priceKind: "cost" | "sale";
   };
 
   const history: Tx[] = [
-    { sku: "SIL-CLR", type: "SALE", quantity: 24, daysAgo: 80, priceKind: "sale" },
-    { sku: "SIL-WHT", type: "SALE", quantity: 18, daysAgo: 78, priceKind: "sale" },
-    { sku: "SIL-CLR", type: "PURCHASE", quantity: 52, daysAgo: 70, priceKind: "cost" },
-    { sku: "SIL-WHT", type: "PURCHASE", quantity: 56, daysAgo: 70, priceKind: "cost" },
-    { sku: "SIL-CLR", type: "SALE", quantity: 30, daysAgo: 60, priceKind: "sale" },
-    { sku: "BLD-100", type: "SALE", quantity: 3, daysAgo: 55, priceKind: "sale" },
-    { sku: "SIL-GAP", type: "SALE", quantity: 16, daysAgo: 50, priceKind: "sale" },
-    { sku: "TAPE-48", type: "SALE", quantity: 22, daysAgo: 45, priceKind: "sale" },
-    { sku: "SIL-WHT", type: "SALE", quantity: 40, daysAgo: 40, priceKind: "sale" },
-    { sku: "ACE-20L", type: "PURCHASE", quantity: 2, daysAgo: 35, priceKind: "cost" },
-    { sku: "DG-650", type: "SALE", quantity: 1, daysAgo: 30, priceKind: "sale" },
-    { sku: "SIL-CLR", type: "SALE", quantity: 28, daysAgo: 25, priceKind: "sale" },
-    { sku: "RAG-10", type: "SALE", quantity: 2, daysAgo: 20, priceKind: "sale" },
-    { sku: "SIL-CLR", type: "SALE", quantity: 20, daysAgo: 14, priceKind: "sale" },
-    { sku: "TAPE-48", type: "SALE", quantity: 18, daysAgo: 10, priceKind: "sale" },
-    { sku: "SIL-WHT", type: "SALE", quantity: 12, daysAgo: 7, priceKind: "sale" },
-    { sku: "STN-PI1", type: "SALE", quantity: 1, daysAgo: 5, priceKind: "sale" },
-    { sku: "SIL-GAP", type: "SALE", quantity: 6, daysAgo: 3, priceKind: "sale" },
-    { sku: "SIL-CLR", type: "SALE", quantity: 15, daysAgo: 1, priceKind: "sale" },
+    { sku: "SIL-CLR", type: "USAGE", quantity: 24, daysAgo: 80 },
+    { sku: "SIL-WHT", type: "USAGE", quantity: 18, daysAgo: 78 },
+    { sku: "SIL-CLR", type: "PURCHASE", quantity: 52, daysAgo: 70 },
+    { sku: "SIL-WHT", type: "PURCHASE", quantity: 56, daysAgo: 70 },
+    { sku: "SIL-CLR", type: "USAGE", quantity: 30, daysAgo: 60 },
+    { sku: "BLD-100", type: "USAGE", quantity: 3, daysAgo: 55 },
+    { sku: "SIL-GAP", type: "USAGE", quantity: 16, daysAgo: 50 },
+    { sku: "TAPE-48", type: "USAGE", quantity: 22, daysAgo: 45 },
+    { sku: "SIL-WHT", type: "USAGE", quantity: 40, daysAgo: 40 },
+    { sku: "ACE-20L", type: "PURCHASE", quantity: 2, daysAgo: 35 },
+    { sku: "DG-650", type: "USAGE", quantity: 1, daysAgo: 30 },
+    { sku: "SIL-CLR", type: "USAGE", quantity: 28, daysAgo: 25 },
+    { sku: "RAG-10", type: "USAGE", quantity: 2, daysAgo: 20 },
+    { sku: "SIL-CLR", type: "USAGE", quantity: 20, daysAgo: 14 },
+    { sku: "TAPE-48", type: "USAGE", quantity: 18, daysAgo: 10 },
+    { sku: "SIL-WHT", type: "USAGE", quantity: 12, daysAgo: 7 },
+    { sku: "STN-PI1", type: "USAGE", quantity: 1, daysAgo: 5 },
+    { sku: "SIL-GAP", type: "USAGE", quantity: 6, daysAgo: 3 },
+    { sku: "SIL-CLR", type: "USAGE", quantity: 15, daysAgo: 1 },
   ];
 
   for (const h of history) {
     const p = product(h.sku);
-    const unitPrice = h.priceKind === "sale" ? p.salePrice : p.costPrice;
+    // Everything is valued at cost. Purchases carry GST; internal usage does not.
+    const unitPrice = p.costPrice;
     const lineEx = unitPrice * h.quantity;
-    const gst = round2(lineEx * GST);
+    const gst = h.type === "PURCHASE" ? round2(lineEx * GST) : 0;
     const total = round2(lineEx + gst);
     const createdAt = new Date();
     createdAt.setDate(createdAt.getDate() - h.daysAgo);

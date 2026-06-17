@@ -6,6 +6,7 @@ import {
   nextQuantity,
   ensureSufficientStock,
   ensureValidQuantity,
+  appliesGst,
   type MovementKind,
 } from "../domain/transaction";
 import type { MovementInput } from "../validation";
@@ -28,9 +29,9 @@ export function listTransactionsByType(type: MovementKind, limit = 25) {
 }
 
 /**
- * Records a purchase (stock in) or sale (stock out): validates the request,
- * computes GST-inclusive totals, writes the transaction and adjusts stock —
- * all atomically. `db` is injectable so the logic can be unit tested.
+ * Records a purchase (stock in) or usage (stock out, consumed internally):
+ * validates the request, computes totals (GST on purchases only), writes the
+ * transaction and adjusts stock — atomically. `db` is injectable for testing.
  */
 export async function recordMovement(input: MovementInput, db: Db = prisma) {
   const kind = input.type as MovementKind;
@@ -42,7 +43,7 @@ export async function recordMovement(input: MovementInput, db: Db = prisma) {
   ensureSufficientStock(kind, product.quantity, input.quantity, product.name);
 
   const unitPrice = resolveUnitPrice(kind, product, input.unitPrice);
-  const line = lineTotals(unitPrice, input.quantity);
+  const line = lineTotals(unitPrice, input.quantity, appliesGst(kind));
   const newQuantity = nextQuantity(kind, product.quantity, input.quantity);
 
   const [transaction] = await db.$transaction([

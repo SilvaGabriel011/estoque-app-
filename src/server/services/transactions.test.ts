@@ -8,13 +8,11 @@ type FakeProduct = {
   name: string;
   quantity: number;
   costPrice: number;
-  salePrice: number;
 };
 
 /**
- * Builds a minimal in-memory stand-in for the Prisma client that satisfies the
- * subset of the API `recordMovement` uses. Lets us test the business logic
- * (stock movement, GST totals, validation) without a database.
+ * Minimal in-memory stand-in for the Prisma client covering the subset
+ * `recordMovement` uses — lets us test the business logic without a database.
  */
 function fakeDb(product: FakeProduct | null) {
   const calls = {
@@ -45,11 +43,10 @@ const product: FakeProduct = {
   name: "Clear Silicone",
   quantity: 100,
   costPrice: 5.5,
-  salePrice: 8.7,
 };
 
 describe("recordMovement", () => {
-  it("increments stock on a purchase and records GST totals", async () => {
+  it("increments stock on a purchase and adds GST", async () => {
     const { db, calls } = fakeDb({ ...product, quantity: 100 });
     const result = await recordMovement(
       { type: "PURCHASE", productId: 7, quantity: 10 },
@@ -58,37 +55,38 @@ describe("recordMovement", () => {
 
     expect(result.newQuantity).toBe(110);
     expect(calls.productUpdate.data.quantity).toBe(110);
-    // default unit price = cost 5.5 -> ex 55, gst 5.5, total 60.5
+    // cost 5.5 * 10 = 55 ex, GST 5.5, total 60.5
     expect(calls.transactionCreate.data.gst).toBe(5.5);
     expect(calls.transactionCreate.data.total).toBe(60.5);
     expect(calls.transactionCreate.data.type).toBe("PURCHASE");
   });
 
-  it("decrements stock on a sale using the sale price", async () => {
+  it("decrements stock on usage with no GST, valued at cost", async () => {
     const { db, calls } = fakeDb({ ...product, quantity: 100 });
     const result = await recordMovement(
-      { type: "SALE", productId: 7, quantity: 4 },
+      { type: "USAGE", productId: 7, quantity: 4 },
       db
     );
 
     expect(result.newQuantity).toBe(96);
-    expect(calls.transactionCreate.data.unitPrice).toBe(8.7);
-    expect(calls.transactionCreate.data.total).toBe(38.28); // 8.7*4=34.8 +10%
+    expect(calls.transactionCreate.data.unitPrice).toBe(5.5);
+    expect(calls.transactionCreate.data.gst).toBe(0);
+    expect(calls.transactionCreate.data.total).toBe(22); // 5.5 * 4, no GST
   });
 
-  it("honours an explicit unit price override", async () => {
+  it("honours an explicit unit price override on a purchase", async () => {
     const { db, calls } = fakeDb({ ...product, quantity: 100 });
     await recordMovement(
-      { type: "SALE", productId: 7, quantity: 2, unitPrice: 10 },
+      { type: "PURCHASE", productId: 7, quantity: 2, unitPrice: 10 },
       db
     );
-    expect(calls.transactionCreate.data.total).toBe(22); // 10*2 +10%
+    expect(calls.transactionCreate.data.total).toBe(22); // 10*2 +10% GST
   });
 
-  it("rejects selling more than is in stock", async () => {
+  it("rejects using more than is in stock", async () => {
     const { db } = fakeDb({ ...product, quantity: 3 });
     await expect(
-      recordMovement({ type: "SALE", productId: 7, quantity: 5 }, db)
+      recordMovement({ type: "USAGE", productId: 7, quantity: 5 }, db)
     ).rejects.toBeInstanceOf(DomainError);
   });
 
@@ -102,7 +100,7 @@ describe("recordMovement", () => {
   it("throws NotFound when the product does not exist", async () => {
     const { db } = fakeDb(null);
     await expect(
-      recordMovement({ type: "SALE", productId: 999, quantity: 1 }, db)
+      recordMovement({ type: "USAGE", productId: 999, quantity: 1 }, db)
     ).rejects.toBeInstanceOf(NotFoundError);
   });
 });

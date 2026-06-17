@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { api, type ReportsResponse } from "@/lib/api";
 import { formatAUD } from "@/lib/money";
 import { Card, StatCard } from "./ui";
-import { DollarIcon, CartIcon, ChartIcon } from "./icons";
+import { CartIcon, DollarIcon, UsageIcon, BoxIcon } from "./icons";
 
 const PERIODS = [
   { days: 30, label: "30 days" },
@@ -40,25 +40,20 @@ export default function ReportsClient() {
   }, [days]);
 
   const fin = data?.financials;
-  const best = data?.bestSellers ?? [];
-  const maxUnits = Math.max(1, ...best.map((b) => b.units));
+  const stock = data?.stock;
+  const mostUsed = data?.mostUsed ?? [];
+  const maxUnits = Math.max(1, ...mostUsed.map((b) => b.units));
 
   return (
     <div>
       <div className="mb-4 sm:mb-6">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-              Reports
-            </h1>
-            <p className="mt-1 hidden text-sm text-slate-500 sm:block">
-              Best sellers and financial balance, served from{" "}
-              <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">
-                /api/reports
-              </code>
-              . All figures in AUD.
-            </p>
-          </div>
+        <div className="mb-3">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Reports
+          </h1>
+          <p className="mt-1 hidden text-sm text-slate-500 sm:block">
+            Purchasing spend, GST paid and stock consumed. All figures in AUD.
+          </p>
         </div>
         <div className="flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1">
           {PERIODS.map((p) => (
@@ -84,90 +79,70 @@ export default function ReportsClient() {
       )}
 
       <div className={loading ? "opacity-50 transition-opacity" : "transition-opacity"}>
-        {/* Financial balance */}
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Financial balance
+          Spend &amp; consumption
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
-            label="Sales revenue (ex. GST)"
-            value={formatAUD(fin?.salesEx ?? 0)}
-            hint={`${formatAUD(fin?.salesInc ?? 0)} inc. GST`}
-            icon={<DollarIcon width={18} height={18} />}
-            accent="emerald"
-          />
-          <StatCard
-            label="Cost of goods sold"
-            value={formatAUD(fin?.cogs ?? 0)}
-            hint="Based on current cost prices"
+            label="Spent on stock (inc. GST)"
+            value={formatAUD(fin?.purchasesInc ?? 0)}
+            hint={`${fin?.purchaseCount ?? 0} purchases`}
             icon={<CartIcon width={18} height={18} />}
             accent="sky"
+            tooltip="Total paid to suppliers for stock, including GST, in this period."
           />
           <StatCard
-            label="Gross profit"
-            value={formatAUD(fin?.grossProfit ?? 0)}
-            hint={
-              fin && fin.salesEx > 0
-                ? `${Math.round((fin.grossProfit / fin.salesEx) * 100)}% margin`
-                : "—"
-            }
-            icon={<ChartIcon width={18} height={18} />}
-            accent="violet"
-            valueTone={(fin?.grossProfit ?? 0) >= 0 ? "good" : "bad"}
-          />
-          <StatCard
-            label="Net GST payable"
-            value={formatAUD(fin?.gstPayable ?? 0)}
-            hint="GST on sales − GST on purchases"
+            label="GST paid (claimable)"
+            value={formatAUD(fin?.purchasesGst ?? 0)}
+            hint="On purchases"
             icon={<DollarIcon width={18} height={18} />}
             accent="amber"
+            tooltip="GST paid on purchases — claimable as a GST credit on your BAS."
+          />
+          <StatCard
+            label="Stock used (at cost)"
+            value={formatAUD(fin?.usageCost ?? 0)}
+            hint={`${fin?.usageCount ?? 0} usage records`}
+            icon={<UsageIcon width={18} height={18} />}
+            accent="violet"
+            tooltip="Cost value of stock consumed on jobs in this period."
+          />
+          <StatCard
+            label="Stock on hand (at cost)"
+            value={formatAUD(stock?.atCost ?? 0)}
+            hint={`${stock?.units ?? 0} units · ${stock?.skus ?? 0} items`}
+            icon={<BoxIcon width={18} height={18} />}
+            accent="emerald"
+            tooltip="Current cost value of everything in inventory right now."
           />
         </div>
 
         <Card className="mt-4">
-          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-            <div className="space-y-1">
-              <Row label="Sales (ex. GST)" value={formatAUD(fin?.salesEx ?? 0)} />
-              <Row
-                label="GST collected on sales"
-                value={formatAUD(fin?.salesGst ?? 0)}
-              />
-              <Row
-                label="Total sales (inc. GST)"
-                value={formatAUD(fin?.salesInc ?? 0)}
-                strong
-              />
-            </div>
-            <div className="space-y-1">
-              <Row
-                label="Purchases (ex. GST)"
-                value={formatAUD(fin?.purchasesEx ?? 0)}
-              />
-              <Row
-                label="GST paid on purchases"
-                value={formatAUD(fin?.purchasesGst ?? 0)}
-              />
-              <Row
-                label="Total purchases (inc. GST)"
-                value={formatAUD(fin?.purchasesInc ?? 0)}
-                strong
-              />
-            </div>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700">
+            Purchasing breakdown
+          </h3>
+          <div className="space-y-1 text-sm">
+            <Row label="Purchases (ex. GST)" value={formatAUD(fin?.purchasesEx ?? 0)} />
+            <Row label="GST paid on purchases" value={formatAUD(fin?.purchasesGst ?? 0)} />
+            <Row
+              label="Total spent (inc. GST)"
+              value={formatAUD(fin?.purchasesInc ?? 0)}
+              strong
+            />
           </div>
         </Card>
 
-        {/* Best sellers */}
         <h2 className="mb-3 mt-8 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Best sellers
+          Most-used items
         </h2>
         <Card>
-          {best.length === 0 ? (
+          {mostUsed.length === 0 ? (
             <p className="text-sm text-slate-500">
-              {loading ? "Loading…" : "No sales recorded in this period."}
+              {loading ? "Loading…" : "No usage recorded in this period."}
             </p>
           ) : (
             <ol className="space-y-4">
-              {best.map((b, i) => (
+              {mostUsed.map((b, i) => (
                 <li key={b.product.id} className="flex items-center gap-4">
                   <span className="w-6 text-right text-sm font-bold text-slate-400">
                     {i + 1}
@@ -178,7 +153,7 @@ export default function ReportsClient() {
                         {b.product.name}
                       </span>
                       <span className="text-slate-500">
-                        {b.units} {b.product.unit} · {formatAUD(b.revenue)}
+                        {b.units} {b.product.unit} · {formatAUD(b.cost)} used
                       </span>
                     </div>
                     <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
