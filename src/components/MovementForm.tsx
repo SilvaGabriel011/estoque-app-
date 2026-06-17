@@ -186,7 +186,9 @@ export default function MovementForm({
     (isPurchase && creating ? !newItem.name.trim() : !selected);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit}>
+      <div className="grid items-start gap-5 lg:grid-cols-2">
+        <div className="space-y-5">
       {/* Item picker */}
       {!creating && (
         <div>
@@ -356,7 +358,9 @@ export default function MovementForm({
           )}
         </div>
       )}
+        </div>
 
+        <div className="space-y-5">
       {/* Quantity + (purchase) price */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
@@ -495,6 +499,8 @@ export default function MovementForm({
               ? `Record purchase · ${formatAUD(totals.inc)}`
               : "Mark as used"}
         </button>
+      </div>
+        </div>
       </div>
     </form>
   );

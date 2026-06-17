@@ -41,18 +41,16 @@ export default function PurchaseWorkspace({
       />
 
       {tab === "record" && (
-        <div className="mx-auto max-w-2xl">
-          <MovementForm
-            products={products}
-            kind="PURCHASE"
-            requestedProductId={requested}
-            key={tick}
-          />
-        </div>
+        <MovementForm
+          products={products}
+          kind="PURCHASE"
+          requestedProductId={requested}
+          key={tick}
+        />
       )}
 
       {tab === "reorder" && (
-        <div className="mx-auto max-w-2xl">
+        <div>
           {lowStock.length === 0 ? (
             <div className="py-10 text-center">
               <ChartIcon width={28} height={28} className="mx-auto mb-2 text-slate-300" />
@@ -66,7 +64,7 @@ export default function PurchaseWorkspace({
                 Items at or below their reorder level. Tap one to load it into the
                 purchase form.
               </p>
-              <ul className="space-y-2">
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {lowStock.map((p) => (
                   <li key={p.id}>
                     <button
